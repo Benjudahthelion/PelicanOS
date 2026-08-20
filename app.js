@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v14.0
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v15.0
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -16,7 +16,7 @@ const STORAGE_KEYS = {
   SELECTED_VOICE: "pelican_selected_voice"
 };
 
-// --- DEFAULT SYSTEM STATE ---
+// --- DEFAULT STATE ---
 const defaultLinks = [
   { name: "Canvas LMS", url: "https://canvas.instructure.com" },
   { name: "GitHub", url: "https://github.com" },
@@ -474,7 +474,7 @@ function initTasks() {
   renderTasks();
 }
 
-/* --- SIDE-BY-SIDE AUDIO FREQUENCY CONTROLLER --- */
+/* --- PLAYLIST AUDIO DECK CONTROLLER --- */
 let customPlaylists = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORED_PLAYLISTS) || "[]");
 
 function sanitizePlaylistId(input) {
@@ -510,28 +510,28 @@ function initAudioDeck() {
   const urlInput = document.getElementById("modal-playlist-url");
   const idxInput = document.getElementById("modal-playlist-index");
 
-  function renderFrequencyCards() {
+  function renderPlaylistCards() {
     cardsGrid.innerHTML = "";
     const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
 
     if (customPlaylists.length === 0) {
-      cardsGrid.innerHTML = `<div style="font-size: 0.72rem; color: var(--text-muted); padding: 0.5rem;">NO FREQUENCIES STORED. CLICK '+ ADD FREQUENCY' TO LOCK A PLAYLIST.</div>`;
+      cardsGrid.innerHTML = `<div style="font-size: 0.72rem; color: var(--text-muted); padding: 0.5rem;">NO PLAYLISTS STORED. CLICK '+ ADD PLAYLIST' TO CONFIGURE.</div>`;
       return;
     }
 
     customPlaylists.forEach((item, idx) => {
       const card = document.createElement("div");
-      card.className = `frequency-card ${item.id === activeId ? 'active-freq' : ''}`;
+      card.className = `playlist-card ${item.id === activeId ? 'active-pl' : ''}`;
 
       card.innerHTML = `
-        <div class="frequency-info">
-          <span class="frequency-name">${item.label}</span>
-          <span class="frequency-id">ID: ${item.id}</span>
+        <div class="playlist-info">
+          <span class="playlist-name">${item.label}</span>
+          <span class="playlist-id-text">ID: ${item.id}</span>
         </div>
-        <div class="frequency-actions">
-          <button class="hud-btn-sm" onclick="tuneAudioPlaylist('${item.id}', '${item.label}')">TUNE</button>
+        <div class="playlist-actions">
+          <button class="hud-btn-sm" onclick="tunePlaylist('${item.id}', '${item.label}')">LOAD</button>
           <button class="hud-btn-sm" onclick="openPlaylistEditModal(${idx})">EDIT</button>
-          <button class="hud-btn-sm hud-btn-accent" onclick="deleteFrequency(${idx})">X</button>
+          <button class="hud-btn-sm hud-btn-accent" onclick="deletePlaylist(${idx})">X</button>
         </div>
       `;
       cardsGrid.appendChild(card);
@@ -540,25 +540,25 @@ function initAudioDeck() {
     localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
   }
 
-  window.tuneAudioPlaylist = (id, label) => {
+  window.tunePlaylist = (id, label) => {
     const cleanId = sanitizePlaylistId(id);
     localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID, cleanId);
     loadPlaylistIframe(cleanId);
-    trackTitle.textContent = `TUNED TO: ${label.toUpperCase()}`;
-    renderFrequencyCards();
+    trackTitle.textContent = `LOADED: ${label.toUpperCase()}`;
+    renderPlaylistCards();
   };
 
-  window.deleteFrequency = (idx) => {
-    showConfirmModal("REMOVE FREQUENCY", `Delete '${customPlaylists[idx].label}' from Comms Deck?`, () => {
+  window.deletePlaylist = (idx) => {
+    showConfirmModal("REMOVE PLAYLIST", `Delete '${customPlaylists[idx].label}' from Comms Deck?`, () => {
       const deletedId = customPlaylists[idx].id;
       customPlaylists.splice(idx, 1);
       if (localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID) === deletedId) {
         localStorage.removeItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
         document.getElementById("playlist-iframe").src = "";
-        trackTitle.textContent = "NO FREQUENCY TUNED";
+        trackTitle.textContent = "NO PLAYLIST LOADED";
         document.getElementById("audio-status").textContent = "STANDBY";
       }
-      renderFrequencyCards();
+      renderPlaylistCards();
     });
   };
 
@@ -569,7 +569,7 @@ function initAudioDeck() {
       labelInput.value = customPlaylists[idx].label;
       urlInput.value = customPlaylists[idx].id;
     } else {
-      modalTitle.textContent = "REGISTER NEW FREQUENCY";
+      modalTitle.textContent = "REGISTER NEW PLAYLIST";
       labelInput.value = "";
       urlInput.value = "";
     }
@@ -603,16 +603,16 @@ function initAudioDeck() {
     }
 
     localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
-    tuneAudioPlaylist(cleanId, label);
+    tunePlaylist(cleanId, label);
     closePlModal();
   });
 
-  renderFrequencyCards();
+  renderPlaylistCards();
 
   const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
   if (activeId) {
     const match = customPlaylists.find(p => p.id === activeId);
-    tuneAudioPlaylist(activeId, match ? match.label : "ACTIVE FREQUENCY");
+    tunePlaylist(activeId, match ? match.label : "ACTIVE PLAYLIST");
   }
 }
 
