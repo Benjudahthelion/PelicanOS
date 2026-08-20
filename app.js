@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v9.0
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v10.0
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -16,7 +16,7 @@ const STORAGE_KEYS = {
   SELECTED_VOICE: "pelican_selected_voice"
 };
 
-// --- DEFAULT SYSTEM STATE ---
+// --- DEFAULT STATE ---
 const defaultLinks = [
   { name: "Canvas LMS", url: "https://canvas.instructure.com" },
   { name: "GitHub", url: "https://github.com" },
@@ -418,14 +418,9 @@ function initTasks() {
   renderTasks();
 }
 
-/* --- FULL-CONTROL YOUTUBE PLAYLIST PLAYER ENGINE --- */
-let ytPlayer = null;
-let isPlayerReady = false;
-let isPlaying = false;
-let isShuffled = false;
+/* --- BULLETPROOF NATIVE YOUTUBE EMBED PLAYER --- */
 let customPlaylists = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORED_PLAYLISTS) || "[]");
 
-// Extract pure playlist ID from URL
 function sanitizePlaylistId(input) {
   let val = input.trim();
   if (val.includes("list=")) {
@@ -436,92 +431,22 @@ function sanitizePlaylistId(input) {
   return val;
 }
 
-// Ensure an initial embed exists to bypass local file blank-screen bugs
-function ensureInitialIframe() {
-  const targetId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID) || "PLLCgG2oCv5XOp_71K6Ur3yhVFJJ4F6tbD"; // Fallback to provided playlist
-  const container = document.getElementById("yt-player-target");
-  if (container.tagName.toLowerCase() !== "iframe") {
-    const iframe = document.createElement("iframe");
-    iframe.id = "yt-player-target";
-    iframe.className = "playlist-iframe";
-    iframe.allow = "autoplay; encrypted-media; picture-in-picture";
-    iframe.allowFullscreen = true;
-    iframe.src = `https://www.youtube.com/embed/videoseries?list=${targetId}&enablejsapi=1&autoplay=0`;
-    container.replaceWith(iframe);
-  }
-}
-
-window.onYouTubeIframeAPIReady = function() {
-  ensureInitialIframe();
-  
-  ytPlayer = new YT.Player("yt-player-target", {
-    events: {
-      onReady: onPlayerReady,
-      onStateChange: onPlayerStateChange,
-      onError: onPlayerError
-    }
-  });
-};
-
-function onPlayerReady() {
-  isPlayerReady = true;
-  document.getElementById("audio-status").textContent = "DECK READY";
-  const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-  
-  if (activeId && ytPlayer.cuePlaylist) {
-    ytPlayer.cuePlaylist({ list: activeId, listType: "playlist" });
-  }
-}
-
-function onPlayerStateChange(event) {
+function loadPlaylistIframe(playlistId) {
+  const iframe = document.getElementById("playlist-iframe");
   const statusBadge = document.getElementById("audio-status");
-  const playBtn = document.getElementById("yt-play-toggle-btn");
-  const trackTitle = document.getElementById("track-title");
+  if (!playlistId) return;
 
-  if (event.data === YT.PlayerState.PLAYING) {
-    isPlaying = true;
-    statusBadge.textContent = "BROADCASTING";
-    playBtn.textContent = "PAUSE";
-    const data = ytPlayer.getVideoData();
-    if (data && data.title) trackTitle.textContent = data.title;
-  } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-    isPlaying = false;
-    statusBadge.textContent = "PAUSED";
-    playBtn.textContent = "PLAY / RESUME";
-  }
-}
-
-function onPlayerError() {
-  document.getElementById("audio-status").textContent = "COMMS FAULT";
-  document.getElementById("track-title").textContent = "PLAYLIST UNAVAILABLE OR RESTRICTED";
-}
-
-function tuneAudioPlaylist(id, label) {
-  const cleanId = sanitizePlaylistId(id);
-  localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID, cleanId);
-  document.getElementById("track-title").textContent = `TUNED TO: ${label.toUpperCase()}`;
-
-  const iframe = document.getElementById("yt-player-target");
-  if (iframe && iframe.tagName.toLowerCase() === "iframe") {
-    iframe.src = `https://www.youtube.com/embed/videoseries?list=${cleanId}&autoplay=1&enablejsapi=1`;
-  } else if (ytPlayer && isPlayerReady && ytPlayer.loadPlaylist) {
-    ytPlayer.loadPlaylist({ list: cleanId, listType: "playlist" });
-  }
-  
-  renderFrequencyCards();
+  const cleanId = sanitizePlaylistId(playlistId);
+  iframe.src = `https://www.youtube-nocookie.com/embed/videoseries?list=${cleanId}&autoplay=1&enablejsapi=1`;
+  statusBadge.textContent = "BROADCASTING";
 }
 
 function initAudioDeck() {
-  ensureInitialIframe(); // Ensure DOM is prepped before API loads
-
-  const playToggleBtn = document.getElementById("yt-play-toggle-btn");
-  const prevBtn = document.getElementById("yt-prev-btn");
-  const nextBtn = document.getElementById("yt-next-btn");
-  const shuffleBtn = document.getElementById("yt-shuffle-btn");
-  const muteBtn = document.getElementById("yt-mute-btn");
-  const volSlider = document.getElementById("yt-vol-slider");
-  const volDisplay = document.getElementById("vol-display");
   const openModalBtn = document.getElementById("open-playlist-modal-btn");
+  const reloadBtn = document.getElementById("reload-stream-btn");
+  const muteBtn = document.getElementById("mute-stream-btn");
+  const trackTitle = document.getElementById("track-title");
+  const cardsGrid = document.getElementById("playlist-cards-grid");
 
   const modal = document.getElementById("playlist-modal");
   const modalTitle = document.getElementById("pl-modal-title");
@@ -531,50 +456,59 @@ function initAudioDeck() {
   const urlInput = document.getElementById("modal-playlist-url");
   const idxInput = document.getElementById("modal-playlist-index");
 
-  playToggleBtn.addEventListener("click", () => {
-    if (!ytPlayer || !isPlayerReady) return;
-    if (isPlaying) ytPlayer.pauseVideo();
-    else ytPlayer.playVideo();
-  });
+  function renderFrequencyCards() {
+    cardsGrid.innerHTML = "";
+    const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
 
-  nextBtn.addEventListener("click", () => {
-    if (ytPlayer && isPlayerReady && ytPlayer.nextVideo) ytPlayer.nextVideo();
-  });
-
-  prevBtn.addEventListener("click", () => {
-    if (ytPlayer && isPlayerReady && ytPlayer.previousVideo) ytPlayer.previousVideo();
-  });
-
-  shuffleBtn.addEventListener("click", () => {
-    if (!ytPlayer || !isPlayerReady) return;
-    isShuffled = !isShuffled;
-    ytPlayer.setShuffle(isShuffled);
-    shuffleBtn.textContent = isShuffled ? "SHUFFLE [ON]" : "SHUFFLE [OFF]";
-    shuffleBtn.classList.toggle("hud-btn-active", isShuffled);
-  });
-
-  muteBtn.addEventListener("click", () => {
-    if (!ytPlayer || !isPlayerReady) return;
-    if (ytPlayer.isMuted()) {
-      ytPlayer.unMute();
-      muteBtn.innerHTML = "&#128266; MUTE";
-      muteBtn.classList.remove("hud-btn-active");
-    } else {
-      ytPlayer.mute();
-      muteBtn.innerHTML = "&#128263; UNMUTE";
-      muteBtn.classList.add("hud-btn-active");
+    if (customPlaylists.length === 0) {
+      cardsGrid.innerHTML = `<div style="font-size: 0.75rem; color: var(--text-muted); padding: 0.5rem;">NO FREQUENCIES STORED. CLICK '+ ADD FREQUENCY' TO LOCK A PLAYLIST.</div>`;
+      return;
     }
-  });
 
-  volSlider.addEventListener("input", (e) => {
-    const val = parseInt(e.target.value, 10);
-    volDisplay.textContent = `${val}%`;
-    if (ytPlayer && isPlayerReady && ytPlayer.setVolume) {
-      ytPlayer.setVolume(val);
+    customPlaylists.forEach((item, idx) => {
+      const card = document.createElement("div");
+      card.className = `frequency-card ${item.id === activeId ? 'active-freq' : ''}`;
+
+      card.innerHTML = `
+        <div class="frequency-info">
+          <span class="frequency-name">${item.label}</span>
+          <span class="frequency-id">ID: ${item.id}</span>
+        </div>
+        <div class="frequency-actions">
+          <button class="hud-btn-sm" onclick="tuneAudioPlaylist('${item.id}', '${item.label}')">TUNE</button>
+          <button class="hud-btn-sm" onclick="openPlaylistEditModal(${idx})">EDIT</button>
+          <button class="hud-btn-sm hud-btn-accent" onclick="deleteFrequency(${idx})">X</button>
+        </div>
+      `;
+      cardsGrid.appendChild(card);
+    });
+
+    localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
+  }
+
+  window.tuneAudioPlaylist = (id, label) => {
+    const cleanId = sanitizePlaylistId(id);
+    localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID, cleanId);
+    loadPlaylistIframe(cleanId);
+    trackTitle.textContent = `TUNED TO: ${label.toUpperCase()}`;
+    renderFrequencyCards();
+  };
+
+  window.deleteFrequency = (idx) => {
+    if (confirm(`Remove frequency '${customPlaylists[idx].label}'?`)) {
+      const deletedId = customPlaylists[idx].id;
+      customPlaylists.splice(idx, 1);
+      if (localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID) === deletedId) {
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
+        document.getElementById("playlist-iframe").src = "";
+        trackTitle.textContent = "NO FREQUENCY TUNED";
+        document.getElementById("audio-status").textContent = "STANDBY";
+      }
+      renderFrequencyCards();
     }
-  });
+  };
 
-  window.openPlaylistEditModal = (idx) => {
+  function openPlModal(idx = -1) {
     idxInput.value = idx;
     if (idx >= 0) {
       modalTitle.textContent = `CONFIG // ${customPlaylists[idx].label.toUpperCase()}`;
@@ -587,23 +521,17 @@ function initAudioDeck() {
     }
     modal.classList.add("open");
     labelInput.focus();
-  };
+  }
 
-  window.deleteFrequency = (idx) => {
-    if (confirm(`Remove frequency '${customPlaylists[idx].label}'?`)) {
-      const deletedId = customPlaylists[idx].id;
-      customPlaylists.splice(idx, 1);
-      if (localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID) === deletedId) {
-        localStorage.removeItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-        document.getElementById("track-title").textContent = "NO FREQUENCY TUNED";
-      }
-      renderFrequencyCards();
-    }
-  };
+  function closePlModal() {
+    modal.classList.remove("open");
+  }
 
-  openModalBtn.addEventListener("click", () => window.openPlaylistEditModal(-1));
-  modalCloseBtn.addEventListener("click", () => modal.classList.remove("open"));
-  modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("open"); });
+  window.openPlaylistEditModal = (idx) => openPlModal(idx);
+
+  openModalBtn.addEventListener("click", () => openPlModal(-1));
+  modalCloseBtn.addEventListener("click", closePlModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closePlModal(); });
 
   modalSaveBtn.addEventListener("click", () => {
     const label = labelInput.value.trim();
@@ -625,53 +553,33 @@ function initAudioDeck() {
 
     localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
     tuneAudioPlaylist(cleanId, label);
-    modal.classList.remove("open");
+    closePlModal();
   });
 
-  // Inject initial default playlist into array if empty
-  if (customPlaylists.length === 0) {
-    customPlaylists.push({ label: "Synthwave Mix", id: "PLLCgG2oCv5XOp_71K6Ur3yhVFJJ4F6tbD" });
-    localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
-    if (!localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID)) {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID, "PLLCgG2oCv5XOp_71K6Ur3yhVFJJ4F6tbD");
-    }
-  }
+  reloadBtn.addEventListener("click", () => {
+    const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
+    if (activeId) loadPlaylistIframe(activeId);
+  });
+
+  muteBtn.addEventListener("click", () => {
+    document.getElementById("playlist-iframe").src = "";
+    document.getElementById("audio-status").textContent = "MUTED";
+    trackTitle.textContent = "STREAM HALTED";
+  });
 
   renderFrequencyCards();
-}
 
-function renderFrequencyCards() {
-  const cardsGrid = document.getElementById("playlist-cards-grid");
-  cardsGrid.innerHTML = "";
+  // Auto-tune active frequency on boot, or fallback to default user playlist
   const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-
-  if (customPlaylists.length === 0) {
-    cardsGrid.innerHTML = `<div style="font-size: 0.75rem; color: var(--text-muted); padding: 0.5rem;">NO FREQUENCIES STORED. CLICK '+ ADD FREQUENCY' TO LOCK A PLAYLIST.</div>`;
-    return;
+  if (activeId) {
+    const match = customPlaylists.find(p => p.id === activeId);
+    tuneAudioPlaylist(activeId, match ? match.label : "ACTIVE FREQUENCY");
+  } else if (customPlaylists.length > 0) {
+    tuneAudioPlaylist(customPlaylists[0].id, customPlaylists[0].label);
   }
-
-  customPlaylists.forEach((item, idx) => {
-    const card = document.createElement("div");
-    card.className = `frequency-card ${item.id === activeId ? 'active-freq' : ''}`;
-
-    card.innerHTML = `
-      <div class="frequency-info">
-        <span class="frequency-name">${item.label}</span>
-        <span class="frequency-id">ID: ${item.id}</span>
-      </div>
-      <div class="frequency-actions">
-        <button class="hud-btn-sm" onclick="tuneAudioPlaylist('${item.id}', '${item.label}')">TUNE</button>
-        <button class="hud-btn-sm" onclick="openPlaylistEditModal(${idx})">EDIT</button>
-        <button class="hud-btn-sm hud-btn-accent" onclick="deleteFrequency(${idx})">X</button>
-      </div>
-    `;
-    cardsGrid.appendChild(card);
-  });
-
-  localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
 }
 
-/* --- HYBRID ONBOARD FLIGHT DECK + GEMINI AI ENGINE --- */
+/* --- FULL SHIP VOICE COMMAND CONTROLLER (COMPLETE MODULE CONTROL) --- */
 function initFlightComputer() {
   const voiceBtn = document.getElementById("voice-btn");
   const briefingBtn = document.getElementById("briefing-btn");
@@ -731,10 +639,7 @@ function initFlightComputer() {
   function speak(text) {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-
-    if (recInstance && isListening) {
-      recInstance.stop();
-    }
+    if (recInstance && isListening) recInstance.stop();
 
     const utterance = new SpeechSynthesisUtterance(text);
     const currentVoice = availableVoices.find(v => v.name === voiceSelect.value);
@@ -746,12 +651,12 @@ function initFlightComputer() {
     window.speechSynthesis.speak(utterance);
   }
 
-  // Pure Voice Command Router (Local Deck Controls First)
+  // Complete Ship Control Voice Engine
   function processFlightCommand(query) {
     const q = query.toLowerCase().trim();
     responseEl.textContent = `Commander: "${query}"`;
 
-    // 1. Briefing / Status
+    // 1. Status Briefing
     if (q.includes("status") || q.includes("briefing") || q.includes("report")) {
       const now = new Date();
       const timeStr = now.toLocaleTimeString("en-US", { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit" });
@@ -763,41 +668,43 @@ function initFlightComputer() {
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    // 2. Audio Deck Commands
-    if (q === "play" || q.includes("play music") || q.includes("start music")) {
-      if (ytPlayer && isPlayerReady && ytPlayer.playVideo) {
-        ytPlayer.playVideo();
+    // 2. Audio Deck Controls
+    if (q.includes("play") || q.includes("music") || q.includes("start music")) {
+      const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
+      if (activeId) {
+        loadPlaylistIframe(activeId);
         const msg = "Audio transmission engaged.";
         responseEl.textContent = msg; speak(msg);
       } else {
-        const msg = "No playlist tuned. Select a frequency.";
+        const msg = "No playlist tuned.";
         responseEl.textContent = msg; speak(msg);
       }
       return;
     }
 
-    if (q === "stop" || q === "pause" || q.includes("pause music") || q.includes("stop music")) {
-      if (ytPlayer && isPlayerReady && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+    if (q.includes("stop") || q.includes("pause") || q.includes("mute")) {
+      document.getElementById("playlist-iframe").src = "";
+      document.getElementById("audio-status").textContent = "MUTED";
       const msg = "Audio playback halted.";
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    if (q.includes("next") || q.includes("skip")) {
-      if (ytPlayer && isPlayerReady && ytPlayer.nextVideo) ytPlayer.nextVideo();
-      const msg = "Advancing track.";
+    // 3. Core Reactor (Timer Controls)
+    if (q.includes("start timer") || q.includes("engage focus") || q.includes("start focus")) {
+      if (!isTimerRunning) toggleReactorTimer();
+      const msg = "Focus reactor sprint engaged.";
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    if (q.includes("prev") || q.includes("previous")) {
-      if (ytPlayer && isPlayerReady && ytPlayer.previousVideo) ytPlayer.previousVideo();
-      const msg = "Reverting track.";
+    if (q.includes("hold timer") || q.includes("pause timer")) {
+      if (isTimerRunning) toggleReactorTimer();
+      const msg = "Focus reactor paused.";
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    // 3. Focus Reactor
-    if (q === "focus" || q === "timer" || q.includes("engage focus") || q.includes("start timer")) {
-      toggleReactorTimer();
-      const msg = "Core focus sprint active.";
+    if (q.includes("reset timer")) {
+      document.getElementById("timer-reset-btn").click();
+      const msg = "Focus reactor reset.";
       responseEl.textContent = msg; speak(msg); return;
     }
 
@@ -809,7 +716,21 @@ function initFlightComputer() {
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    // 4. Scripture
+    // 4. Study Odometer / Work Hours
+    if (q.includes("log hour") || q.includes("add hour")) {
+      document.getElementById("log-hour-btn").click();
+      const hours = localStorage.getItem(STORAGE_KEYS.STUDY_HOURS) || "0.0";
+      const msg = `Hour logged. Total weekly load: ${hours} hours.`;
+      responseEl.textContent = msg; speak(msg); return;
+    }
+
+    if (q.includes("reset week")) {
+      document.getElementById("reset-week-btn").click();
+      const msg = "Weekly study odometer initialized to zero.";
+      responseEl.textContent = msg; speak(msg); return;
+    }
+
+    // 5. Scripture
     if (q.includes("verse") || q.includes("scripture") || q.includes("bible")) {
       const vText = document.getElementById("kjv-text").textContent;
       const vRef = document.getElementById("kjv-ref").textContent;
@@ -817,15 +738,7 @@ function initFlightComputer() {
       speak(`${vText} ${vRef}`); return;
     }
 
-    // 5. Search / Lookup
-    if (q.startsWith("search for ") || q.startsWith("google ") || q.startsWith("look up ")) {
-      const term = q.replace(/^(search for|google|look up)\s+/, "");
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(term)}`, "_blank");
-      const msg = `Searching data feed for: ${term}.`;
-      responseEl.textContent = msg; speak(msg); return;
-    }
-
-    // 6. Tasks
+    // 6. Mission Tasks
     if (q.startsWith("add task ") || q.startsWith("new task ")) {
       const taskText = q.replace(/^(add task|new task)\s+/, "");
       logNewTask(taskText, "NORMAL");
@@ -833,15 +746,22 @@ function initFlightComputer() {
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    // 7. Fallback to Gemini for complex queries
+    // 7. Search / Lookup (Zero API cost)
+    if (q.startsWith("search for ") || q.startsWith("google ") || q.startsWith("look up ")) {
+      const term = q.replace(/^(search for|google|look up)\s+/, "");
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(term)}`, "_blank");
+      const msg = `Searching data feed for: ${term}.`;
+      responseEl.textContent = msg; speak(msg); return;
+    }
+
+    // 8. Fallback to Gemini AI for complex CS reasoning
     queryGeminiAI(query);
   }
 
-  // Active Gemini AI Query Cascade (Direct 1.5-Flash link)
   async function queryGeminiAI(promptText) {
     const apiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY);
     if (!apiKey) {
-      const msg = `Order acknowledged. (Add API Key in top right for CS reasoning queries).`;
+      const msg = `Order acknowledged. (Add API Key in top right for complex queries).`;
       responseEl.textContent = msg; speak("Order acknowledged."); return;
     }
 
@@ -883,12 +803,12 @@ function initFlightComputer() {
     processFlightCommand("status briefing");
   });
 
-  // Speech Recognition (Push-to-Talk with Strict Final Result Filter)
+  // Speech Recognition with Strict Final Result Filter
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SpeechRec) {
     recInstance = new SpeechRec();
     recInstance.continuous = false;
-    recInstance.interimResults = false; // Strictly prevents half-sentence overlaps
+    recInstance.interimResults = false;
 
     recInstance.onstart = () => { 
       isListening = true;
@@ -905,7 +825,6 @@ function initFlightComputer() {
     };
     
     recInstance.onresult = (e) => {
-      // Enforce final match only to stop overlap bug
       if (e.results && e.results[0] && e.results[0].isFinal) {
         const transcript = e.results[0][0].transcript;
         processFlightCommand(transcript);
@@ -978,7 +897,7 @@ function initTerminal() {
       const [cmd, ...args] = val.split(" ");
       switch(cmd.toLowerCase()) {
         case "help":
-          log("PELICAN Commands: status, clear, play, pause, next, prev, mins [N], search [query], theme [cyber|matrix|lcars|deepspace]");
+          log("PELICAN Commands: status, clear, play, stop, mins [N], search [query], theme [cyber|matrix|lcars|deepspace]");
           break;
         case "status":
           log("PELICAN-01 Status: Systems nominal. Central Time synced. Reactor online.");
@@ -990,16 +909,11 @@ function initTerminal() {
           }
           break;
         case "play":
-          if (ytPlayer && isPlayerReady && ytPlayer.playVideo) ytPlayer.playVideo();
+          const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
+          if (activeId) loadPlaylistIframe(activeId);
           break;
-        case "pause":
-          if (ytPlayer && isPlayerReady && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
-          break;
-        case "next":
-          if (ytPlayer && isPlayerReady && ytPlayer.nextVideo) ytPlayer.nextVideo();
-          break;
-        case "prev":
-          if (ytPlayer && isPlayerReady && ytPlayer.previousVideo) ytPlayer.previousVideo();
+        case "stop":
+          document.getElementById("playlist-iframe").src = "";
           break;
         case "search":
           if (args.length > 0) {
