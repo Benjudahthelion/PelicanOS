@@ -68,7 +68,7 @@
         </div>
         <div class="ai-body">
           <div id="cmd-hints-drawer" class="cmd-hints-drawer">
-            <span><strong>SHIP ORDERS:</strong> "status", "start timer", "reset timer", "set timer 45 mins", "log hour", "reset week", "play music", "stop music", "add task [name]", "search [query]", or any CS question.</span>
+            <span><strong>SHIP ORDERS:</strong> "status", "start timer", "reset timer", "set timer 45 mins", "log hour", "reset week", "play music", "stop music", "add task [name]", "search [query]", or any CS theory question.</span>
           </div>
 
           <div class="ai-visualizer" id="visualizer">
@@ -79,7 +79,7 @@
             <div class="wave-bar"></div>
           </div>
           <p id="ai-status" class="ai-status">STANDBY // HOLD [RIGHT CTRL] OR CLICK TALK</p>
-          <div id="ai-response" class="ai-text-box">PELICAN Flight Deck Online. Hold [Right Control] to give full ship commands, Commander.</div>
+          <div id="ai-response" class="ai-text-box">PELICAN Flight Deck Online. Ready for operational directives, Commander.</div>
           <div class="ai-controls">
             <button id="voice-btn" class="hud-btn" title="Hold Right Ctrl key to talk">PUSH TO TALK [R-CTRL]</button>
             <button id="briefing-btn" class="hud-btn hud-btn-accent">STATUS BRIEFING</button>
@@ -169,7 +169,7 @@
         </ul>
       </section>
 
-      <!-- 06 // Comms Audio Frequency Deck (Bulletproof Embed View) -->
+      <!-- 06 // Comms Audio Frequency Deck (Standard Native Embed) -->
       <section class="hud-panel audio-panel">
         <div class="panel-header">
           <h2>06 // COMMS AUDIO FREQUENCY DECK</h2>
@@ -180,9 +180,9 @@
         </div>
         <div class="audio-body">
           <div class="audio-main-layout">
-            <!-- Native Official Embed Screen -->
+            <!-- Native YouTube Embed Mount -->
             <div class="audio-visual-mount">
-              <iframe id="playlist-iframe" class="playlist-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+              <iframe id="playlist-iframe" class="playlist-iframe" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
             </div>
 
             <div class="audio-control-cluster">
@@ -198,7 +198,7 @@
             </div>
           </div>
 
-          <!-- Stored Frequency Cards Matrix (No pre-made presets) -->
+          <!-- Stored Frequency Cards Matrix -->
           <div class="frequencies-container">
             <div class="frequencies-label">SAVED AUDIO FREQUENCIES:</div>
             <div id="playlist-cards-grid" class="playlist-cards-grid">
