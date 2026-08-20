@@ -169,7 +169,7 @@
         </ul>
       </section>
 
-      <!-- 06 // Comms Audio Frequency Deck (Standard Native Embed) -->
+      <!-- 06 // Comms Audio Frequency Deck (Official Pure Embed) -->
       <section class="hud-panel audio-panel">
         <div class="panel-header">
           <h2>06 // COMMS AUDIO FREQUENCY DECK</h2>
@@ -180,7 +180,7 @@
         </div>
         <div class="audio-body">
           <div class="audio-main-layout">
-            <!-- Native YouTube Embed Mount -->
+            <!-- Native Official YouTube Embed Container -->
             <div class="audio-visual-mount">
               <iframe id="playlist-iframe" class="playlist-iframe" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
             </div>
@@ -253,6 +253,61 @@
         </div>
         <div class="modal-actions">
           <button id="pl-modal-save-btn" class="hud-btn hud-btn-accent">LOCK FREQUENCY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Key Configuration Modal -->
+  <div id="api-modal" class="hud-modal-overlay">
+    <div class="hud-panel hud-modal">
+      <div class="panel-header">
+        <h2>GEMINI TELEMETRY KEY</h2>
+        <button id="api-modal-close-btn" class="hud-btn-sm">X</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field">
+          <label for="api-key-input">GOOGLE AI STUDIO API KEY</label>
+          <input type="text" id="api-key-input" placeholder="AIzaSy...">
+        </div>
+        <div class="modal-actions">
+          <button id="api-modal-save-btn" class="hud-btn hud-btn-accent">SAVE TO LOCAL STORAGE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timer Set Minutes Modal -->
+  <div id="timer-modal" class="hud-modal-overlay">
+    <div class="hud-panel hud-modal">
+      <div class="panel-header">
+        <h2>CALIBRATE FOCUS SPRINT</h2>
+        <button id="timer-modal-close-btn" class="hud-btn-sm">X</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field">
+          <label for="timer-minutes-input">DURATION (MINUTES)</label>
+          <input type="number" id="timer-minutes-input" min="1" max="180" value="25">
+        </div>
+        <div class="modal-actions">
+          <button id="timer-modal-save-btn" class="hud-btn hud-btn-accent">CALIBRATE REACTOR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generic Confirmation Modal -->
+  <div id="confirm-modal" class="hud-modal-overlay">
+    <div class="hud-panel hud-modal">
+      <div class="panel-header">
+        <h2 id="confirm-modal-title">CONFIRM PROTOCOL</h2>
+        <button id="confirm-modal-close-btn" class="hud-btn-sm">X</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-modal-text" style="font-size: 0.8rem; color: var(--text); line-height: 1.4;"></p>
+        <div class="modal-actions" style="gap: 0.5rem;">
+          <button id="confirm-modal-cancel-btn" class="hud-btn">ABORT</button>
+          <button id="confirm-modal-ok-btn" class="hud-btn hud-btn-accent">EXECUTE</button>
         </div>
       </div>
     </div>
