@@ -570,33 +570,6 @@ body {
   align-items: center;
 }
 
-.audio-volume-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 0.35rem 0.65rem;
-  border-radius: 3px;
-}
-
-.vol-label {
-  font-size: 0.65rem;
-  color: var(--primary);
-}
-
-.hud-slider {
-  flex: 1;
-  accent-color: var(--primary);
-  cursor: pointer;
-}
-
-.vol-num {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  min-width: 35px;
-}
-
 .frequencies-container {
   display: flex;
   flex-direction: column;
