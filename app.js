@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v15.0
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v16.0
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -493,7 +493,7 @@ function loadPlaylistIframe(playlistId) {
   if (!playlistId) return;
 
   const cleanId = sanitizePlaylistId(playlistId);
-  iframe.src = `https://www.youtube.com/embed?listType=playlist&list=${cleanId}&autoplay=1`;
+  iframe.src = `https://www.youtube.com/embed/videoseries?list=${cleanId}&autoplay=1`;
   statusBadge.textContent = "BROADCASTING";
 }
 
@@ -544,7 +544,7 @@ function initAudioDeck() {
     const cleanId = sanitizePlaylistId(id);
     localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID, cleanId);
     loadPlaylistIframe(cleanId);
-    trackTitle.textContent = `LOADED: ${label.toUpperCase()}`;
+    trackTitle.textContent = `${label.toUpperCase()}`;
     renderPlaylistCards();
   };
 
@@ -607,13 +607,13 @@ function initAudioDeck() {
     closePlModal();
   });
 
-  renderPlaylistCards();
-
-  const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-  if (activeId) {
-    const match = customPlaylists.find(p => p.id === activeId);
-    tunePlaylist(activeId, match ? match.label : "ACTIVE PLAYLIST");
+  // Load default playlist card if empty
+  if (customPlaylists.length === 0) {
+    customPlaylists.push({ label: "Cristiana // Study Mix", id: "PLLCgG2oCv5XOp_71K6Ur3yhVFJJ4F6tbD" });
+    localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
   }
+
+  renderPlaylistCards();
 }
 
 /* --- FULL SHIP VOICE COMMAND CONTROLLER --- */
