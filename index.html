@@ -34,7 +34,7 @@
         <div class="hud-tag">CALLSIGN: PELICAN-01 // LOUISIANA CS FLIGHT DECK</div>
         <h1 class="hud-title">PELICAN OS // COMMAND</h1>
       </div>
-      
+
       <div class="header-center">
         <div class="clock-display" id="clock">12:00:00 AM</div>
         <div class="date-display" id="date">SYS_INIT...</div>
@@ -50,8 +50,12 @@
             <option value="lcars">LCARS AMBER</option>
           </select>
         </div>
+        <button id="backup-btn" class="hud-btn-sm" title="Download all dashboard data as a JSON backup file">BACKUP</button>
+        <button id="restore-btn" class="hud-btn-sm" title="Restore dashboard data from a JSON backup file">RESTORE</button>
+        <input type="file" id="restore-file-input" accept="application/json" style="display:none;">
         <button id="api-btn" class="hud-btn-sm" title="Configure Gemini API Key">API KEY</button>
       </div>
+      <span id="backup-status" class="backup-status"></span>
     </header>
 
     <!-- Bento Grid -->
@@ -68,7 +72,7 @@
         </div>
         <div class="ai-body">
           <div id="cmd-hints-drawer" class="cmd-hints-drawer">
-            <span><strong>SHIP ORDERS:</strong> "status", "start timer", "reset timer", "set timer 45 mins", "log hour", "reset week", "add task [name]", "search [query]", or any CS question.</span>
+            <span><strong>SHIP ORDERS:</strong> "status", "start timer", "reset timer", "set timer 45 mins", "log hour", "reset week", "add task [name]", "search [query]", "backup", or any CS question.</span>
           </div>
 
           <div class="ai-visualizer" id="visualizer">
@@ -132,6 +136,10 @@
               <button id="reset-week-btn" class="hud-btn-sm hud-btn-accent" title="Reset current week's study hours">RESET WEEK</button>
             </div>
           </div>
+          <div class="trend-section">
+            <div class="odometer-labels"><span>7-DAY LOAD TREND</span></div>
+            <div id="trend-chart" class="trend-chart-container"></div>
+          </div>
         </div>
       </section>
 
@@ -153,10 +161,15 @@
       <section class="hud-panel log-panel">
         <div class="panel-header">
           <h2>05 // MISSION LOG (SPRINTS)</h2>
-          <span id="task-count" class="hud-badge">0 ACTIVE</span>
+          <div class="header-inline-controls">
+            <span id="overdue-count" class="hud-badge hud-badge-alert" style="display:none;">0 OVERDUE</span>
+            <span id="task-count" class="hud-badge">0 ACTIVE</span>
+          </div>
         </div>
         <div class="log-input-row">
           <input type="text" id="task-input" placeholder="New objective..." autocomplete="off">
+          <input type="text" id="task-course" class="task-course-input" placeholder="Course (opt)" autocomplete="off">
+          <input type="date" id="task-due" class="task-due-input" title="Due date (optional)">
           <select id="task-priority">
             <option value="NORMAL">PRIO_NORMAL</option>
             <option value="CRITICAL">PRIO_CRITICAL</option>
@@ -185,12 +198,12 @@
               <span class="cyber-dot"></span>
               <span class="cyber-frame-title">AUDIO TRANSMISSION STREAM</span>
             </div>
-            <iframe 
-              id="playlist-iframe" 
-              class="playlist-iframe" 
-              src="" 
+            <iframe
+              id="playlist-iframe"
+              class="playlist-iframe"
+              src=""
               referrerpolicy="strict-origin-when-cross-origin"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowfullscreen>
             </iframe>
           </div>
@@ -201,7 +214,7 @@
               <span class="now-playing-label">ACTIVE PLAYLIST:</span>
               <span id="track-title" class="track-title">NO PLAYLIST LOADED</span>
             </div>
-            
+
             <div id="playlist-cards-grid" class="playlist-cards-grid">
               <!-- Rendered Playlist Cards -->
             </div>
