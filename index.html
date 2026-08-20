@@ -8,8 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- YouTube IFrame API Script -->
-  <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body data-theme="cyber">
   <canvas id="starfield"></canvas>
@@ -70,7 +68,7 @@
         </div>
         <div class="ai-body">
           <div id="cmd-hints-drawer" class="cmd-hints-drawer">
-            <span><strong>FLIGHT ORDERS:</strong> "status", "play music", "stop music", "next track", "previous track", "shuffle music", "focus", "focus 45 mins", "read verse", "search [query]", "add task [name]", or ask any CS question.</span>
+            <span><strong>SHIP ORDERS:</strong> "status", "start timer", "reset timer", "set timer 45 mins", "log hour", "reset week", "play music", "stop music", "add task [name]", "search [query]", or any CS question.</span>
           </div>
 
           <div class="ai-visualizer" id="visualizer">
@@ -81,7 +79,7 @@
             <div class="wave-bar"></div>
           </div>
           <p id="ai-status" class="ai-status">STANDBY // HOLD [RIGHT CTRL] OR CLICK TALK</p>
-          <div id="ai-response" class="ai-text-box">PELICAN Flight Deck Online. Hold [Right Control] to give voice orders or ask intelligence questions, Commander.</div>
+          <div id="ai-response" class="ai-text-box">PELICAN Flight Deck Online. Hold [Right Control] to give full ship commands, Commander.</div>
           <div class="ai-controls">
             <button id="voice-btn" class="hud-btn" title="Hold Right Ctrl key to talk">PUSH TO TALK [R-CTRL]</button>
             <button id="briefing-btn" class="hud-btn hud-btn-accent">STATUS BRIEFING</button>
@@ -171,21 +169,20 @@
         </ul>
       </section>
 
-      <!-- 06 // Comms Audio Frequency Deck (Hard-Embed YouTube Player) -->
+      <!-- 06 // Comms Audio Frequency Deck (Bulletproof Embed View) -->
       <section class="hud-panel audio-panel">
         <div class="panel-header">
           <h2>06 // COMMS AUDIO FREQUENCY DECK</h2>
           <div class="header-inline-controls">
             <button id="open-playlist-modal-btn" class="hud-btn-sm hud-btn-accent">+ ADD FREQUENCY</button>
-            <span id="audio-status" class="hud-badge">INITIALIZING...</span>
+            <span id="audio-status" class="hud-badge">STANDBY</span>
           </div>
         </div>
         <div class="audio-body">
           <div class="audio-main-layout">
             <!-- Native Official Embed Screen -->
             <div class="audio-visual-mount">
-              <!-- Hardcoded iframe to bypass local file restrictions -->
-              <iframe id="yt-player-target" class="playlist-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+              <iframe id="playlist-iframe" class="playlist-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
             </div>
 
             <div class="audio-control-cluster">
@@ -195,23 +192,13 @@
               </div>
 
               <div class="audio-controls-row">
-                <button id="yt-prev-btn" class="hud-btn-sm">&#9664;&#9664; PREV</button>
-                <button id="yt-play-toggle-btn" class="hud-btn">PLAY / RESUME</button>
-                <button id="yt-next-btn" class="hud-btn-sm">NEXT &#9654;&#9654;</button>
-                <button id="yt-shuffle-btn" class="hud-btn-sm">SHUFFLE [OFF]</button>
-                <button id="yt-mute-btn" class="hud-btn-sm">&#128266; MUTE</button>
-              </div>
-
-              <!-- Volume Control Slider -->
-              <div class="audio-volume-bar">
-                <span class="vol-label">VOL:</span>
-                <input type="range" id="yt-vol-slider" min="0" max="100" value="100" class="hud-slider">
-                <span id="vol-display" class="vol-num">100%</span>
+                <button id="reload-stream-btn" class="hud-btn hud-btn-accent">&#8635; RELOAD STREAM</button>
+                <button id="mute-stream-btn" class="hud-btn-sm">&#128266; MUTE / CLEAR</button>
               </div>
             </div>
           </div>
 
-          <!-- Stored Frequency Cards Matrix -->
+          <!-- Stored Frequency Cards Matrix (No pre-made presets) -->
           <div class="frequencies-container">
             <div class="frequencies-label">SAVED AUDIO FREQUENCIES:</div>
             <div id="playlist-cards-grid" class="playlist-cards-grid">
@@ -258,7 +245,7 @@
         <input type="hidden" id="modal-playlist-index" value="-1">
         <div class="modal-field">
           <label for="modal-playlist-label">FREQUENCY LABEL</label>
-          <input type="text" id="modal-playlist-label" placeholder="e.g. Synthwave Mix">
+          <input type="text" id="modal-playlist-label" placeholder="e.g. Cristiana // Study Mix">
         </div>
         <div class="modal-field">
           <label for="modal-playlist-url">YOUTUBE PLAYLIST URL OR ID</label>
