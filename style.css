@@ -49,6 +49,66 @@
   --text-muted: #6b7280;
 }
 
+[data-theme="synthwave"] {
+  --bg-color: #0d0221;
+  --panel-bg: rgba(26, 6, 51, 0.82);
+  --panel-border: rgba(255, 0, 170, 0.4);
+  --primary: #ff00aa;
+  --primary-glow: rgba(255, 0, 170, 0.55);
+  --accent: #00f0ff;
+  --accent-glow: rgba(0, 240, 255, 0.5);
+  --text: #ffe6f7;
+  --text-muted: #9b6b9b;
+}
+
+[data-theme="terminal"] {
+  --bg-color: #010805;
+  --panel-bg: rgba(2, 12, 6, 0.9);
+  --panel-border: rgba(0, 255, 65, 0.35);
+  --primary: #33ff66;
+  --primary-glow: rgba(51, 255, 102, 0.45);
+  --accent: #99ff00;
+  --accent-glow: rgba(153, 255, 0, 0.4);
+  --text: #b8ffc8;
+  --text-muted: #2d6b3a;
+}
+
+[data-theme="ember"] {
+  --bg-color: #120604;
+  --panel-bg: rgba(28, 10, 6, 0.85);
+  --panel-border: rgba(255, 90, 31, 0.4);
+  --primary: #ff5a1f;
+  --primary-glow: rgba(255, 90, 31, 0.5);
+  --accent: #ffcc00;
+  --accent-glow: rgba(255, 204, 0, 0.45);
+  --text: #ffe8d6;
+  --text-muted: #a06a4a;
+}
+
+[data-theme="arctic"] {
+  --bg-color: #030810;
+  --panel-bg: rgba(8, 16, 28, 0.85);
+  --panel-border: rgba(125, 211, 252, 0.35);
+  --primary: #7dd3fc;
+  --primary-glow: rgba(125, 211, 252, 0.5);
+  --accent: #e0f2fe;
+  --accent-glow: rgba(224, 242, 254, 0.4);
+  --text: #e0f2fe;
+  --text-muted: #5b7a99;
+}
+
+[data-theme="bayou"] {
+  --bg-color: #0a1008;
+  --panel-bg: rgba(14, 22, 12, 0.88);
+  --panel-border: rgba(201, 162, 39, 0.4);
+  --primary: #c9a227;
+  --primary-glow: rgba(201, 162, 39, 0.5);
+  --accent: #4ade80;
+  --accent-glow: rgba(74, 222, 128, 0.45);
+  --text: #f0e6c8;
+  --text-muted: #6b7a4a;
+}
+
 /* --- BASE STYLES --- */
 * {
   box-sizing: border-box;
@@ -1007,6 +1067,28 @@ input[type="text"], input[type="number"], input[type="date"], select {
 .modal-field input:focus {
   border-color: var(--primary);
   box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.modal-toggle-row {
+  flex-direction: row;
+  align-items: center;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--text);
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+
+.toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
 .modal-actions {
