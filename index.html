@@ -31,8 +31,8 @@
     <!-- Header -->
     <header class="hud-panel header-panel">
       <div class="header-left">
-        <div class="hud-tag">CALLSIGN: PELICAN-01 // LOUISIANA CS FLIGHT DECK</div>
-        <h1 class="hud-title">PELICAN OS // COMMAND</h1>
+        <div class="hud-tag" id="hud-callsign-tag">CALLSIGN: COMMANDER // LOUISIANA CS FLIGHT DECK</div>
+        <h1 class="hud-title">PELICAN OS // COMMANDER</h1>
       </div>
 
       <div class="header-center">
@@ -48,8 +48,14 @@
             <option value="matrix">MATRIX CRT</option>
             <option value="deepspace">DEEP SPACE</option>
             <option value="lcars">LCARS AMBER</option>
+            <option value="synthwave">SYNTHWAVE</option>
+            <option value="terminal">TERMINAL GREEN</option>
+            <option value="ember">EMBER FORGE</option>
+            <option value="arctic">ARCTIC ICE</option>
+            <option value="bayou">BAYOU GOLD</option>
           </select>
         </div>
+        <button id="pilot-btn" class="hud-btn-sm" title="Pilot callsign & visual preferences">PILOT</button>
         <button id="backup-btn" class="hud-btn-sm" title="Download all dashboard data as a JSON backup file">BACKUP</button>
         <button id="restore-btn" class="hud-btn-sm" title="Restore dashboard data from a JSON backup file">RESTORE</button>
         <input type="file" id="restore-file-input" accept="application/json" style="display:none;">
@@ -83,7 +89,7 @@
             <div class="wave-bar"></div>
           </div>
           <p id="ai-status" class="ai-status">STANDBY // HOLD [RIGHT CTRL] OR CLICK TALK</p>
-          <div id="ai-response" class="ai-text-box">PELICAN Flight Deck Online. Ready for operational directives, Commander.</div>
+          <div id="ai-response" class="ai-text-box">PELICAN Flight Deck Online. Systems nominal. Awaiting your orders.</div>
           <div class="ai-controls">
             <button id="voice-btn" class="hud-btn" title="Hold Right Ctrl key to talk">PUSH TO TALK [R-CTRL]</button>
             <button id="briefing-btn" class="hud-btn hud-btn-accent">STATUS BRIEFING</button>
@@ -305,6 +311,37 @@
         </div>
         <div class="modal-actions">
           <button id="timer-modal-save-btn" class="hud-btn hud-btn-accent">CALIBRATE REACTOR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pilot Config / Personalization Modal -->
+  <div id="pilot-modal" class="hud-modal-overlay">
+    <div class="hud-panel hud-modal">
+      <div class="panel-header">
+        <h2>PILOT CONFIGURATION</h2>
+        <button id="pilot-modal-close-btn" class="hud-btn-sm">X</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field">
+          <label for="pilot-callsign-input">CALLSIGN / PILOT NAME</label>
+          <input type="text" id="pilot-callsign-input" placeholder="e.g. JUDAH, PELICAN, COMMANDER" maxlength="24">
+        </div>
+        <div class="modal-field modal-toggle-row">
+          <label class="toggle-label">
+            <input type="checkbox" id="crt-toggle" checked>
+            <span>CRT SCANLINE OVERLAY</span>
+          </label>
+        </div>
+        <div class="modal-field modal-toggle-row">
+          <label class="toggle-label">
+            <input type="checkbox" id="starfield-toggle" checked>
+            <span>STARFIELD ANIMATION</span>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button id="pilot-modal-save-btn" class="hud-btn hud-btn-accent">LOCK CONFIG</button>
         </div>
       </div>
     </div>
