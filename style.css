@@ -504,7 +504,7 @@ body {
   opacity: 0.4;
 }
 
-/* --- SIDE-BY-SIDE AUDIO PLAYLIST DECK --- */
+/* --- CYBER FRAMED AUDIO DECK --- */
 .audio-deck-layout {
   display: flex;
   gap: 1.25rem;
@@ -523,16 +523,41 @@ body {
   border: 1px solid var(--panel-border);
   border-radius: 4px;
   background: #000;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
   box-shadow: 0 0 12px rgba(0,0,0,0.8);
+}
+
+.cyber-frame-header {
+  background: rgba(0, 240, 255, 0.1);
+  border-bottom: 1px solid var(--panel-border);
+  padding: 0.35rem 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cyber-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--primary);
+}
+
+.cyber-frame-title {
+  font-size: 0.6rem;
+  color: var(--primary);
+  letter-spacing: 1px;
 }
 
 .playlist-iframe {
   width: 100%;
   height: 100%;
-  min-height: 220px;
+  min-height: 185px;
   border: none;
+  flex: 1;
 }
 
 .audio-manager-station {
