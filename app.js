@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v17.0
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v18.0
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -13,8 +13,25 @@ const STORAGE_KEYS = {
   STORED_PLAYLISTS: "pelican_custom_playlists",
   CURRENT_PLAYLIST_ID: "pelican_curr_active_playlist",
   FOCUS_DEFAULT_MINS: "pelican_focus_default_mins",
-  SELECTED_VOICE: "pelican_selected_voice"
+  SELECTED_VOICE: "pelican_selected_voice",
+  STUDY_LOG: "pelican_study_log"
 };
+
+// Keys included in BACKUP / RESTORE. Deliberately excludes GEMINI_KEY (a
+// secret you don't want sitting in a shareable JSON file) and DAILY_VERSE
+// (a cache that regenerates itself, not worth persisting).
+const BACKUP_KEYS = [
+  STORAGE_KEYS.THEME,
+  STORAGE_KEYS.TASKS,
+  STORAGE_KEYS.LINKS,
+  STORAGE_KEYS.STUDY_HOURS,
+  STORAGE_KEYS.STUDY_TARGET,
+  STORAGE_KEYS.STORED_PLAYLISTS,
+  STORAGE_KEYS.CURRENT_PLAYLIST_ID,
+  STORAGE_KEYS.FOCUS_DEFAULT_MINS,
+  STORAGE_KEYS.SELECTED_VOICE,
+  STORAGE_KEYS.STUDY_LOG
+];
 
 // --- DEFAULT STATE ---
 const defaultLinks = [
@@ -30,6 +47,24 @@ const fallbackVerses = [
   { text: "The LORD is my shepherd; I shall not want.", ref: "Psalm 23:1" },
   { text: "Commit thy works unto the LORD, and thy thoughts shall be established.", ref: "Proverbs 16:3" }
 ];
+
+/* --- SHARED DATE HELPERS (Central Time, matches the HUD clock) --- */
+function getCentralDateStr(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const map = {};
+  parts.forEach(p => { map[p.type] = p.value; });
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+function formatDueLabel(dueStr) {
+  const d = new Date(dueStr + "T00:00:00");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
+}
 
 /* --- MODAL CONTROLLER --- */
 let confirmCallback = null;
@@ -190,6 +225,45 @@ function displayVerse(v) {
   document.getElementById("kjv-ref").textContent = `— ${v.ref}`;
 }
 
+/* --- STUDY LOG (7-DAY TREND) --- */
+function logStudyLogEntry(hoursToAdd) {
+  if (!hoursToAdd || hoursToAdd <= 0) return;
+  const log = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDY_LOG) || "{}");
+  const today = getCentralDateStr();
+  log[today] = parseFloat(((log[today] || 0) + hoursToAdd).toFixed(2));
+  localStorage.setItem(STORAGE_KEYS.STUDY_LOG, JSON.stringify(log));
+  renderTrendChart();
+}
+
+function renderTrendChart() {
+  const container = document.getElementById("trend-chart");
+  if (!container) return;
+  const log = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDY_LOG) || "{}");
+  const todayKey = getCentralDateStr();
+
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = getCentralDateStr(d);
+    const label = d.toLocaleDateString("en-US", { timeZone: "America/Chicago", weekday: "narrow" });
+    days.push({ key, label, hours: log[key] || 0 });
+  }
+
+  const maxHours = Math.max(2, ...days.map(d => d.hours));
+
+  container.innerHTML = days.map(d => {
+    const pct = Math.min(100, Math.round((d.hours / maxHours) * 100));
+    const isToday = d.key === todayKey;
+    return `
+      <div class="trend-col ${isToday ? "trend-today" : ""}" title="${d.hours.toFixed(1)} hrs">
+        <div class="trend-bar-track"><div class="trend-bar-fill" style="height:${pct}%;"></div></div>
+        <span class="trend-day-label">${d.label}</span>
+      </div>
+    `;
+  }).join("");
+}
+
 /* --- CORE REACTOR (POMODORO & FOCUS TIME) --- */
 let timerInterval = null;
 let defaultMinutes = parseInt(localStorage.getItem(STORAGE_KEYS.FOCUS_DEFAULT_MINS) || "25", 10);
@@ -230,10 +304,13 @@ function toggleReactorTimer() {
       } else {
         clearInterval(timerInterval);
         isTimerRunning = false;
+
+        const sessionHours = parseFloat((defaultMinutes / 60).toFixed(2));
         let hours = parseFloat(localStorage.getItem(STORAGE_KEYS.STUDY_HOURS) || "0.0");
-        hours += parseFloat((defaultMinutes / 60).toFixed(2));
+        hours += sessionHours;
         localStorage.setItem(STORAGE_KEYS.STUDY_HOURS, hours.toString());
-        
+        logStudyLogEntry(sessionHours);
+
         let target = parseInt(localStorage.getItem(STORAGE_KEYS.STUDY_TARGET) || "40", 10);
         document.getElementById("hours-label").textContent = `${hours.toFixed(1)} / ${target}.0 HRS`;
         document.getElementById("study-progress-bar").style.width = `${Math.min(100, (hours / target) * 100)}%`;
@@ -270,6 +347,7 @@ function initReactor() {
   logHourBtn.addEventListener("click", () => {
     hours += 1.0;
     localStorage.setItem(STORAGE_KEYS.STUDY_HOURS, hours.toString());
+    logStudyLogEntry(1.0);
     updateOdometer();
   });
 
@@ -280,7 +358,7 @@ function initReactor() {
   });
 
   resetWeekBtn.addEventListener("click", () => {
-    showConfirmModal("RESET WEEK LOAD", "Confirm resetting weekly study log back to 0.0 HRS?", () => {
+    showConfirmModal("RESET WEEK LOAD", "Confirm resetting weekly study log back to 0.0 HRS? (Your 7-day trend history is kept.)", () => {
       hours = 0.0;
       localStorage.setItem(STORAGE_KEYS.STUDY_HOURS, "0.0");
       updateOdometer();
@@ -299,6 +377,7 @@ function initReactor() {
   });
 
   updateOdometer();
+  renderTrendChart();
 }
 
 /* --- NAV COMPUTER --- */
@@ -306,7 +385,7 @@ function initLinks() {
   const container = document.getElementById("links-container");
   const addBtn = document.getElementById("add-link-btn");
   const editModeBtn = document.getElementById("toggle-edit-mode-btn");
-  
+
   const modal = document.getElementById("link-modal");
   const modalTitle = document.getElementById("modal-title");
   const modalCloseBtn = document.getElementById("modal-close-btn");
@@ -416,9 +495,15 @@ function initLinks() {
 }
 
 /* --- MISSION LOG (TASKS) --- */
-function logNewTask(text, priority = "NORMAL") {
+function logNewTask(text, priority = "NORMAL", due = "", course = "") {
   let tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || "[]");
-  tasks.push({ text: text.trim(), priority, done: false });
+  tasks.push({
+    text: text.trim(),
+    priority,
+    done: false,
+    due: due || null,
+    course: course.trim() || null
+  });
   localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
   renderTasks();
 }
@@ -426,49 +511,90 @@ function logNewTask(text, priority = "NORMAL") {
 function renderTasks() {
   const list = document.getElementById("task-list");
   const countEl = document.getElementById("task-count");
+  const overdueEl = document.getElementById("overdue-count");
   let tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || "[]");
+  const todayStr = getCentralDateStr();
+
+  const sorted = [...tasks].sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    const ad = a.due || "9999-99-99";
+    const bd = b.due || "9999-99-99";
+    return ad.localeCompare(bd);
+  });
 
   list.innerHTML = "";
-  tasks.forEach((t, i) => {
+  sorted.forEach((t) => {
+    const i = tasks.indexOf(t);
+    const isOverdue = !!(t.due && !t.done && t.due < todayStr);
+    const isDueToday = !!(t.due && !t.done && t.due === todayStr);
+
     const li = document.createElement("li");
-    li.className = `task-item ${t.priority} ${t.done ? "done" : ""}`;
+    li.className = `task-item ${t.priority} ${t.done ? "done" : ""} ${isOverdue ? "overdue" : ""}`;
+
+    const courseTag = t.course ? `<span class="task-course-tag">${t.course}</span>` : "";
+    let dueTag = "";
+    if (t.due) {
+      const dueClass = isOverdue ? "overdue" : isDueToday ? "due-today" : "";
+      const dueText = isOverdue ? "OVERDUE" : isDueToday ? "DUE TODAY" : formatDueLabel(t.due);
+      dueTag = `<span class="task-due-tag ${dueClass}">${dueText}</span>`;
+    }
+
     li.innerHTML = `
-      <span>[${t.priority}] ${t.text}</span>
-      <div>
+      <div class="task-main">
+        <span class="task-text">[${t.priority}] ${t.text}</span>
+        <div class="task-tags">${courseTag}${dueTag}</div>
+      </div>
+      <div class="task-actions">
         <button class="hud-btn-sm" onclick="toggleTask(${i})">${t.done ? 'UNDO' : 'DONE'}</button>
         <button class="hud-btn-sm" onclick="removeTask(${i})">X</button>
       </div>
     `;
     list.appendChild(li);
   });
+
   const active = tasks.filter(t => !t.done).length;
+  const overdue = tasks.filter(t => !t.done && t.due && t.due < todayStr).length;
   countEl.textContent = `${active} ACTIVE`;
+  if (overdueEl) {
+    overdueEl.textContent = `${overdue} OVERDUE`;
+    overdueEl.style.display = overdue > 0 ? "inline-block" : "none";
+  }
 }
 
 function initTasks() {
   const input = document.getElementById("task-input");
+  const courseInput = document.getElementById("task-course");
+  const dueInput = document.getElementById("task-due");
   const prio = document.getElementById("task-priority");
   const addBtn = document.getElementById("add-task-btn");
 
-  window.toggleTask = (i) => { 
+  window.toggleTask = (i) => {
     let tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || "[]");
-    tasks[i].done = !tasks[i].done; 
+    tasks[i].done = !tasks[i].done;
     localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
-    renderTasks(); 
-  };
-  
-  window.removeTask = (i) => { 
-    let tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || "[]");
-    tasks.splice(i, 1); 
-    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
-    renderTasks(); 
+    renderTasks();
   };
 
-  addBtn.addEventListener("click", () => {
+  window.removeTask = (i) => {
+    let tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || "[]");
+    tasks.splice(i, 1);
+    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+    renderTasks();
+  };
+
+  function handleAdd() {
     if (input.value.trim()) {
-      logNewTask(input.value.trim(), prio.value);
+      logNewTask(input.value.trim(), prio.value, dueInput.value, courseInput.value);
       input.value = "";
+      courseInput.value = "";
+      dueInput.value = "";
+      input.focus();
     }
+  }
+
+  addBtn.addEventListener("click", handleAdd);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleAdd();
   });
 
   renderTasks();
@@ -624,6 +750,83 @@ function initAudioDeck() {
   }
 }
 
+/* --- BACKUP / RESTORE --- */
+function exportBackup() {
+  const data = {};
+  BACKUP_KEYS.forEach(key => {
+    const val = localStorage.getItem(key);
+    if (val !== null) data[key] = val;
+  });
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = getCentralDateStr();
+  a.href = url;
+  a.download = `pelican-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  showBackupStatus("Backup downloaded.", false);
+}
+
+function applyRestore(data) {
+  let restoredCount = 0;
+  BACKUP_KEYS.forEach(key => {
+    if (typeof data[key] === "string") {
+      localStorage.setItem(key, data[key]);
+      restoredCount++;
+    }
+  });
+  if (restoredCount === 0) {
+    showBackupStatus("No recognized data in that file.", true);
+    return;
+  }
+  location.reload();
+}
+
+function showBackupStatus(msg, isError) {
+  const el = document.getElementById("backup-status");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `backup-status ${isError ? "backup-status-error" : ""}`;
+  clearTimeout(showBackupStatus._t);
+  showBackupStatus._t = setTimeout(() => { el.textContent = ""; }, 5000);
+}
+
+function initBackupRestore() {
+  const backupBtn = document.getElementById("backup-btn");
+  const restoreBtn = document.getElementById("restore-btn");
+  const fileInput = document.getElementById("restore-file-input");
+
+  backupBtn.addEventListener("click", exportBackup);
+
+  restoreBtn.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        showConfirmModal(
+          "RESTORE BACKUP",
+          "This will overwrite current tasks, hours, links, playlists, and theme with the contents of this file. This cannot be undone. Continue?",
+          () => applyRestore(data)
+        );
+      } catch (err) {
+        showBackupStatus("Invalid backup file.", true);
+      }
+      fileInput.value = "";
+    };
+    reader.readAsText(file);
+  });
+}
+
 /* --- FULL SHIP VOICE COMMAND CONTROLLER --- */
 function initFlightComputer() {
   const voiceBtn = document.getElementById("voice-btn");
@@ -701,8 +904,10 @@ function initFlightComputer() {
       const hours = localStorage.getItem(STORAGE_KEYS.STUDY_HOURS) || "0.0";
       const target = localStorage.getItem(STORAGE_KEYS.STUDY_TARGET) || "40";
       const tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || "[]").filter(t => !t.done);
-      
-      const msg = `PELICAN nominal. Time is ${timeStr} Central. ${hours} of ${target} study hours logged. ${tasks.length} active objectives.`;
+      const todayStr = getCentralDateStr();
+      const overdueCount = tasks.filter(t => t.due && t.due < todayStr).length;
+
+      const msg = `PELICAN nominal. Time is ${timeStr} Central. ${hours} of ${target} study hours logged. ${tasks.length} active objectives, ${overdueCount} overdue.`;
       responseEl.textContent = msg; speak(msg); return;
     }
 
@@ -770,6 +975,13 @@ function initFlightComputer() {
       responseEl.textContent = msg; speak(msg); return;
     }
 
+    // 6.5 Backup
+    if (q.includes("backup") || q.includes("export data")) {
+      exportBackup();
+      const msg = "Data backup exported to downloads.";
+      responseEl.textContent = msg; speak(msg); return;
+    }
+
     // 7. Fallback to Gemini AI for complex CS reasoning
     queryGeminiAI(query);
   }
@@ -825,20 +1037,20 @@ function initFlightComputer() {
     recInstance.continuous = false;
     recInstance.interimResults = false;
 
-    recInstance.onstart = () => { 
+    recInstance.onstart = () => {
       isListening = true;
-      statusEl.textContent = "LISTENING... [SPEAK COMMAND]"; 
-      vis.classList.add("active-voice"); 
+      statusEl.textContent = "LISTENING... [SPEAK COMMAND]";
+      vis.classList.add("active-voice");
       voiceBtn.classList.add("hud-btn-active");
     };
-    
-    recInstance.onend = () => { 
+
+    recInstance.onend = () => {
       isListening = false;
-      statusEl.textContent = "STANDBY // HOLD [RIGHT CTRL] OR CLICK TALK"; 
-      vis.classList.remove("active-voice"); 
+      statusEl.textContent = "STANDBY // HOLD [RIGHT CTRL] OR CLICK TALK";
+      vis.classList.remove("active-voice");
       voiceBtn.classList.remove("hud-btn-active");
     };
-    
+
     recInstance.onresult = (e) => {
       if (e.results && e.results[0] && e.results[0].isFinal) {
         const transcript = e.results[0][0].transcript;
@@ -872,6 +1084,8 @@ function initFlightComputer() {
         stopListening();
       }
     });
+  } else {
+    statusEl.textContent = "VOICE UNSUPPORTED IN THIS BROWSER // USE TEXT COMMANDS BELOW";
   }
 
   document.getElementById("read-verse-btn").addEventListener("click", () => {
@@ -912,7 +1126,7 @@ function initTerminal() {
       const [cmd, ...args] = val.split(" ");
       switch(cmd.toLowerCase()) {
         case "help":
-          log("PELICAN Commands: status, clear, mins [N], search [query], theme [cyber|matrix|lcars|deepspace]");
+          log("PELICAN Commands: status, clear, mins [N], search [query], theme [cyber|matrix|lcars|deepspace], backup, restore");
           break;
         case "status":
           log("PELICAN-01 Status: Systems nominal. Central Time synced. Reactor online.");
@@ -929,6 +1143,14 @@ function initTerminal() {
             window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, "_blank");
             log(`Searching Google for: ${q}`);
           }
+          break;
+        case "backup":
+          exportBackup();
+          log("Backup exported to downloads.");
+          break;
+        case "restore":
+          document.getElementById("restore-file-input").click();
+          log("Select a backup file to restore.");
           break;
         case "clear":
           logs.innerHTML = "";
@@ -970,4 +1192,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initAudioDeck();
   initFlightComputer();
   initTerminal();
+  initBackupRestore();
 });
