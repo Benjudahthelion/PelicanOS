@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v11.0 (FINAL)
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v12.0
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -16,7 +16,7 @@ const STORAGE_KEYS = {
   SELECTED_VOICE: "pelican_selected_voice"
 };
 
-// --- DEFAULT STATE ---
+// --- DEFAULT SYSTEM STATE ---
 const defaultLinks = [
   { name: "Canvas LMS", url: "https://canvas.instructure.com" },
   { name: "GitHub", url: "https://github.com" },
@@ -30,6 +30,76 @@ const fallbackVerses = [
   { text: "The LORD is my shepherd; I shall not want.", ref: "Psalm 23:1" },
   { text: "Commit thy works unto the LORD, and thy thoughts shall be established.", ref: "Proverbs 16:3" }
 ];
+
+/* --- GENERIC STYLED MODAL CONTROLLER (REPLACES ALL PROMPT/ALERT/CONFIRM) --- */
+let confirmCallback = null;
+
+function showConfirmModal(title, text, onConfirm) {
+  const modal = document.getElementById("confirm-modal");
+  document.getElementById("confirm-modal-title").textContent = title;
+  document.getElementById("confirm-modal-text").textContent = text;
+  confirmCallback = onConfirm;
+  modal.classList.add("open");
+}
+
+function initModalInfrastructure() {
+  const confirmModal = document.getElementById("confirm-modal");
+  const confirmCloseBtn = document.getElementById("confirm-modal-close-btn");
+  const confirmCancelBtn = document.getElementById("confirm-modal-cancel-btn");
+  const confirmOkBtn = document.getElementById("confirm-modal-ok-btn");
+
+  function closeConfirm() {
+    confirmModal.classList.remove("open");
+    confirmCallback = null;
+  }
+
+  confirmCloseBtn.addEventListener("click", closeConfirm);
+  confirmCancelBtn.addEventListener("click", closeConfirm);
+  confirmOkBtn.addEventListener("click", () => {
+    if (confirmCallback) confirmCallback();
+    closeConfirm();
+  });
+
+  // Timer Set Mins Modal
+  const timerModal = document.getElementById("timer-modal");
+  const timerCloseBtn = document.getElementById("timer-modal-close-btn");
+  const timerSaveBtn = document.getElementById("timer-modal-save-btn");
+  const timerInput = document.getElementById("timer-minutes-input");
+
+  document.getElementById("timer-set-btn").addEventListener("click", () => {
+    timerInput.value = localStorage.getItem(STORAGE_KEYS.FOCUS_DEFAULT_MINS) || "25";
+    timerModal.classList.add("open");
+    timerInput.focus();
+  });
+
+  timerCloseBtn.addEventListener("click", () => timerModal.classList.remove("open"));
+  timerSaveBtn.addEventListener("click", () => {
+    const parsed = parseInt(timerInput.value, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      setReactorDuration(parsed);
+    }
+    timerModal.classList.remove("open");
+  });
+
+  // API Key Modal
+  const apiModal = document.getElementById("api-modal");
+  const apiCloseBtn = document.getElementById("api-modal-close-btn");
+  const apiSaveBtn = document.getElementById("api-modal-save-btn");
+  const apiKeyInput = document.getElementById("api-key-input");
+
+  document.getElementById("api-btn").addEventListener("click", () => {
+    apiKeyInput.value = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || "";
+    apiModal.classList.add("open");
+    apiKeyInput.focus();
+  });
+
+  apiCloseBtn.addEventListener("click", () => apiModal.classList.remove("open"));
+  apiSaveBtn.addEventListener("click", () => {
+    const keyVal = apiKeyInput.value.trim();
+    localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, keyVal);
+    apiModal.classList.remove("open");
+  });
+}
 
 /* --- STARFIELD ANIMATION CANVAS --- */
 function initStarfield() {
@@ -160,7 +230,6 @@ function toggleReactorTimer() {
       } else {
         clearInterval(timerInterval);
         isTimerRunning = false;
-        alert("FOCUS SPRINT TERMINATED. Core recharge initiated.");
         let hours = parseFloat(localStorage.getItem(STORAGE_KEYS.STUDY_HOURS) || "0.0");
         hours += parseFloat((defaultMinutes / 60).toFixed(2));
         localStorage.setItem(STORAGE_KEYS.STUDY_HOURS, hours.toString());
@@ -182,7 +251,6 @@ function initReactor() {
   const readout = document.getElementById("timer-readout");
   const toggleBtn = document.getElementById("timer-toggle-btn");
   const resetBtn = document.getElementById("timer-reset-btn");
-  const setBtn = document.getElementById("timer-set-btn");
   const logHourBtn = document.getElementById("log-hour-btn");
   const targetToggleBtn = document.getElementById("target-toggle-btn");
   const resetWeekBtn = document.getElementById("reset-week-btn");
@@ -197,17 +265,7 @@ function initReactor() {
     targetToggleBtn.textContent = `TARGET: ${target}H`;
   }
 
-  function promptSetMins() {
-    const promptVal = prompt("Enter Focus Sprint duration in minutes:", defaultMinutes.toString());
-    const parsed = parseInt(promptVal, 10);
-    if (!isNaN(parsed) && parsed > 0) {
-      setReactorDuration(parsed);
-    }
-  }
-
   readout.textContent = `${String(defaultMinutes).padStart(2, "0")}:00`;
-  readout.addEventListener("click", promptSetMins);
-  setBtn.addEventListener("click", promptSetMins);
 
   logHourBtn.addEventListener("click", () => {
     hours += 1.0;
@@ -222,12 +280,11 @@ function initReactor() {
   });
 
   resetWeekBtn.addEventListener("click", () => {
-    const confirmed = confirm("WARNING: Reset current weekly study load back to 0.0 HRS? Confirm new week initiation?");
-    if (confirmed) {
+    showConfirmModal("RESET WEEK LOAD", "Confirm resetting weekly study log back to 0.0 HRS?", () => {
       hours = 0.0;
       localStorage.setItem(STORAGE_KEYS.STUDY_HOURS, "0.0");
       updateOdometer();
-    }
+    });
   });
 
   toggleBtn.addEventListener("click", toggleReactorTimer);
@@ -321,8 +378,10 @@ function initLinks() {
   window.openEditModal = (idx) => openModal(idx);
 
   window.deleteLink = (idx) => {
-    links.splice(idx, 1);
-    render();
+    showConfirmModal("DELETE PORTAL", `Remove portal '${links[idx].name}' from Nav Computer?`, () => {
+      links.splice(idx, 1);
+      render();
+    });
   };
 
   addBtn.addEventListener("click", () => openModal(-1));
@@ -337,10 +396,7 @@ function initLinks() {
     let url = urlInput.value.trim();
     const idx = parseInt(idxInput.value, 10);
 
-    if (!name || !url) {
-      alert("Name and URL required.");
-      return;
-    }
+    if (!name || !url) return;
 
     if (!/^https?:\/\//i.test(url)) {
       url = "https://" + url;
@@ -437,7 +493,7 @@ function loadPlaylistIframe(playlistId) {
   if (!playlistId) return;
 
   const cleanId = sanitizePlaylistId(playlistId);
-  iframe.src = `https://www.youtube-nocookie.com/embed?listType=playlist&list=${cleanId}&autoplay=1`;
+  iframe.src = `https://www.youtube.com/embed/videoseries?list=${cleanId}&autoplay=1`;
   statusBadge.textContent = "BROADCASTING";
 }
 
@@ -495,7 +551,7 @@ function initAudioDeck() {
   };
 
   window.deleteFrequency = (idx) => {
-    if (confirm(`Remove frequency '${customPlaylists[idx].label}'?`)) {
+    showConfirmModal("REMOVE FREQUENCY", `Delete '${customPlaylists[idx].label}' from Comms Deck?`, () => {
       const deletedId = customPlaylists[idx].id;
       customPlaylists.splice(idx, 1);
       if (localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID) === deletedId) {
@@ -505,7 +561,7 @@ function initAudioDeck() {
         document.getElementById("audio-status").textContent = "STANDBY";
       }
       renderFrequencyCards();
-    }
+    });
   };
 
   function openPlModal(idx = -1) {
@@ -538,10 +594,7 @@ function initAudioDeck() {
     const rawUrl = urlInput.value.trim();
     const idx = parseInt(idxInput.value, 10);
 
-    if (!label || !rawUrl) {
-      alert("Both Frequency Label and YouTube Link/ID are required.");
-      return;
-    }
+    if (!label || !rawUrl) return;
 
     const cleanId = sanitizePlaylistId(rawUrl);
 
@@ -586,7 +639,6 @@ function initFlightComputer() {
   const responseEl = document.getElementById("ai-response");
   const vis = document.getElementById("visualizer");
   const voiceSelect = document.getElementById("voice-select");
-  const apiBtn = document.getElementById("api-btn");
 
   let availableVoices = [];
   let isListening = false;
@@ -594,11 +646,6 @@ function initFlightComputer() {
 
   toggleHintsBtn.addEventListener("click", () => {
     hintsDrawer.classList.toggle("open");
-  });
-
-  apiBtn.addEventListener("click", () => {
-    const key = prompt("Enter Google AI Studio Gemini API Key:", localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || "");
-    if (key !== null) localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, key.trim());
   });
 
   function populateVoices() {
@@ -717,12 +764,6 @@ function initFlightComputer() {
       document.getElementById("log-hour-btn").click();
       const hours = localStorage.getItem(STORAGE_KEYS.STUDY_HOURS) || "0.0";
       const msg = `Hour logged. Total weekly load: ${hours} hours.`;
-      responseEl.textContent = msg; speak(msg); return;
-    }
-
-    if (q.includes("reset week")) {
-      document.getElementById("reset-week-btn").click();
-      const msg = "Weekly study odometer initialized to zero.";
       responseEl.textContent = msg; speak(msg); return;
     }
 
@@ -946,6 +987,7 @@ function initTheming() {
 
 // --- MASTER BOOTSTRAP ---
 document.addEventListener("DOMContentLoaded", () => {
+  initModalInfrastructure();
   initStarfield();
   initClock();
   initTheming();
