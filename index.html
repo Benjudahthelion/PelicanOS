@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PELICAN-01 // COMMAND DECK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- YouTube IFrame API Script -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body data-theme="cyber">
+  <canvas id="starfield"></canvas>
+  <div class="crt-overlay"></div>
+
+  <!-- Terminal Drawer -->
+  <aside id="terminal-drawer" class="terminal-drawer">
+    <div class="terminal-bar">
+      <span>PELICAN SYS_CONSOLE // [ESC] or [~] to close</span>
+      <span class="status-indicator">ONLINE</span>
+    </div>
+    <div id="terminal-output" class="terminal-logs"></div>
+    <div class="terminal-prompt">
+      <span class="prompt-symbol">pelican &gt;</span>
+      <input type="text" id="terminal-input" placeholder="Type 'help' or commands: 'status', 'play', 'skip', 'theme matrix'..." autocomplete="off">
+    </div>
+  </aside>
+
+  <!-- Main HUD Layout -->
+  <main class="hud-container">
+    <!-- Header -->
+    <header class="hud-panel header-panel">
+      <div class="header-left">
+        <div class="hud-tag">CALLSIGN: PELICAN-01 // LOUISIANA CS FLIGHT DECK</div>
+        <h1 class="hud-title">PELICAN OS // COMMAND</h1>
+      </div>
+      
+      <div class="header-center">
+        <div class="clock-display" id="clock">12:00:00 AM</div>
+        <div class="date-display" id="date">SYS_INIT...</div>
+      </div>
+
+      <div class="header-right">
+        <div class="theme-picker">
+          <label for="theme-select">THEME:</label>
+          <select id="theme-select">
+            <option value="cyber">CYBERPUNK NEON</option>
+            <option value="matrix">MATRIX CRT</option>
+            <option value="deepspace">DEEP SPACE</option>
+            <option value="lcars">LCARS AMBER</option>
+          </select>
+        </div>
+        <button id="api-btn" class="hud-btn-sm" title="Configure Gemini API Key">API KEY</button>
+      </div>
+    </header>
+
+    <!-- Bento Grid -->
+    <div class="hud-grid">
+      <!-- 01 // Voice Flight Computer -->
+      <section class="hud-panel ai-panel">
+        <div class="panel-header">
+          <h2>01 // ONBOARD FLIGHT COMPUTER (PELICAN)</h2>
+          <div class="header-inline-controls">
+            <button id="toggle-hints-btn" class="hud-btn-sm">COMM SUGGESTIONS</button>
+            <select id="voice-select" class="hud-select-sm" title="Synthesizer Voice Engine"></select>
+            <span class="live-dot"></span>
+          </div>
+        </div>
+        <div class="ai-body">
+          <div id="cmd-hints-drawer" class="cmd-hints-drawer">
+            <span><strong>FLIGHT ORDERS:</strong> "status", "play music", "stop music", "next track", "previous track", "shuffle music", "focus", "focus 45 mins", "read verse", "search [query]", "add task [name]", or ask any CS question.</span>
+          </div>
+
+          <div class="ai-visualizer" id="visualizer">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+          <p id="ai-status" class="ai-status">STANDBY // HOLD [RIGHT CTRL] OR CLICK TALK</p>
+          <div id="ai-response" class="ai-text-box">PELICAN Flight Deck Online. Hold [Right Control] to give voice orders or ask intelligence questions, Commander.</div>
+          <div class="ai-controls">
+            <button id="voice-btn" class="hud-btn" title="Hold Right Ctrl key to talk">PUSH TO TALK [R-CTRL]</button>
+            <button id="briefing-btn" class="hud-btn hud-btn-accent">STATUS BRIEFING</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 // Comms Array / KJV Verse -->
+      <section class="hud-panel comms-panel">
+        <div class="panel-header">
+          <h2>02 // SCRIPTURE COMMS ARRAY</h2>
+          <span class="hud-badge">KJV DAILY</span>
+        </div>
+        <div class="comms-body">
+          <blockquote id="kjv-text" class="kjv-quote">
+            "Trust in the LORD with all thine heart; and lean not unto thine own understanding."
+          </blockquote>
+          <cite id="kjv-ref" class="kjv-cite">— Proverbs 3:5</cite>
+          <div class="comms-footer">
+            <button id="read-verse-btn" class="hud-btn-sm">READ ALOUD</button>
+            <button id="refresh-verse-btn" class="hud-btn-sm">CYCLE VERSE</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 // Core Reactor (Timer & Study Hours) -->
+      <section class="hud-panel reactor-panel">
+        <div class="panel-header">
+          <h2>03 // CORE FOCUS REACTOR</h2>
+          <span id="reactor-mode" class="hud-badge">IDLE</span>
+        </div>
+        <div class="reactor-body">
+          <div class="timer-display" id="timer-readout" title="Click to set custom minutes">25:00</div>
+          <div class="timer-controls">
+            <button id="timer-toggle-btn" class="hud-btn">ENGAGE FOCUS</button>
+            <button id="timer-reset-btn" class="hud-btn-sm">RESET</button>
+            <button id="timer-set-btn" class="hud-btn-sm">SET MINS</button>
+          </div>
+          <div class="odometer-container">
+            <div class="odometer-labels">
+              <span>WEEKLY STUDY LOAD</span>
+              <span id="hours-label">0.0 / 40.0 HRS</span>
+            </div>
+            <div class="progress-track">
+              <div id="study-progress-bar" class="progress-fill" style="width: 0%;"></div>
+            </div>
+            <div class="odometer-controls">
+              <button id="log-hour-btn" class="hud-btn-sm">+1 HR WORK</button>
+              <button id="target-toggle-btn" class="hud-btn-sm">TARGET: 40H</button>
+              <button id="reset-week-btn" class="hud-btn-sm hud-btn-accent" title="Reset current week's study hours">RESET WEEK</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 // Nav Computer (2-Column Grid) -->
+      <section class="hud-panel nav-panel">
+        <div class="panel-header">
+          <h2>04 // NAV COMPUTER (LINKS)</h2>
+          <div class="header-inline-controls">
+            <button id="add-link-btn" class="hud-btn-sm">+ ADD</button>
+            <button id="toggle-edit-mode-btn" class="hud-btn-sm">EDIT</button>
+          </div>
+        </div>
+        <div id="links-container" class="links-matrix-grid">
+          <!-- 2-Column link cards rendered here -->
+        </div>
+      </section>
+
+      <!-- 05 // Mission Log / Tasks -->
+      <section class="hud-panel log-panel">
+        <div class="panel-header">
+          <h2>05 // MISSION LOG (SPRINTS)</h2>
+          <span id="task-count" class="hud-badge">0 ACTIVE</span>
+        </div>
+        <div class="log-input-row">
+          <input type="text" id="task-input" placeholder="New objective..." autocomplete="off">
+          <select id="task-priority">
+            <option value="NORMAL">PRIO_NORMAL</option>
+            <option value="CRITICAL">PRIO_CRITICAL</option>
+            <option value="EXAM">PRIO_EXAM</option>
+          </select>
+          <button id="add-task-btn" class="hud-btn-sm">LOG</button>
+        </div>
+        <ul id="task-list" class="task-items">
+          <!-- Dynamic Tasks Injected Here -->
+        </ul>
+      </section>
+
+      <!-- 06 // Comms Audio Frequency Deck (Hard-Embed YouTube Player) -->
+      <section class="hud-panel audio-panel">
+        <div class="panel-header">
+          <h2>06 // COMMS AUDIO FREQUENCY DECK</h2>
+          <div class="header-inline-controls">
+            <button id="open-playlist-modal-btn" class="hud-btn-sm hud-btn-accent">+ ADD FREQUENCY</button>
+            <span id="audio-status" class="hud-badge">INITIALIZING...</span>
+          </div>
+        </div>
+        <div class="audio-body">
+          <div class="audio-main-layout">
+            <!-- Native Official Embed Screen -->
+            <div class="audio-visual-mount">
+              <!-- Hardcoded iframe to bypass local file restrictions -->
+              <iframe id="yt-player-target" class="playlist-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+
+            <div class="audio-control-cluster">
+              <div class="audio-track-info">
+                <div class="now-playing-label">ACTIVE TRANSMISSION FREQUENCY:</div>
+                <div id="track-title" class="track-title">NO FREQUENCY TUNED</div>
+              </div>
+
+              <div class="audio-controls-row">
+                <button id="yt-prev-btn" class="hud-btn-sm">&#9664;&#9664; PREV</button>
+                <button id="yt-play-toggle-btn" class="hud-btn">PLAY / RESUME</button>
+                <button id="yt-next-btn" class="hud-btn-sm">NEXT &#9654;&#9654;</button>
+                <button id="yt-shuffle-btn" class="hud-btn-sm">SHUFFLE [OFF]</button>
+                <button id="yt-mute-btn" class="hud-btn-sm">&#128266; MUTE</button>
+              </div>
+
+              <!-- Volume Control Slider -->
+              <div class="audio-volume-bar">
+                <span class="vol-label">VOL:</span>
+                <input type="range" id="yt-vol-slider" min="0" max="100" value="100" class="hud-slider">
+                <span id="vol-display" class="vol-num">100%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stored Frequency Cards Matrix -->
+          <div class="frequencies-container">
+            <div class="frequencies-label">SAVED AUDIO FREQUENCIES:</div>
+            <div id="playlist-cards-grid" class="playlist-cards-grid">
+              <!-- Rendered Frequency Cards -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Link Portal Modal -->
+  <div id="link-modal" class="hud-modal-overlay">
+    <div class="hud-panel hud-modal">
+      <div class="panel-header">
+        <h2 id="modal-title">PORTAL CONFIGURATION</h2>
+        <button id="modal-close-btn" class="hud-btn-sm">X</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="modal-link-index" value="-1">
+        <div class="modal-field">
+          <label for="modal-link-name">PORTAL NAME</label>
+          <input type="text" id="modal-link-name" placeholder="e.g. CS311 Portal">
+        </div>
+        <div class="modal-field">
+          <label for="modal-link-url">DESTINATION URL</label>
+          <input type="text" id="modal-link-url" placeholder="https://...">
+        </div>
+        <div class="modal-actions">
+          <button id="modal-save-btn" class="hud-btn hud-btn-accent">TRANSMIT / SAVE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Playlist Configuration Modal -->
+  <div id="playlist-modal" class="hud-modal-overlay">
+    <div class="hud-panel hud-modal">
+      <div class="panel-header">
+        <h2 id="pl-modal-title">FREQUENCY CONFIGURATION</h2>
+        <button id="pl-modal-close-btn" class="hud-btn-sm">X</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="modal-playlist-index" value="-1">
+        <div class="modal-field">
+          <label for="modal-playlist-label">FREQUENCY LABEL</label>
+          <input type="text" id="modal-playlist-label" placeholder="e.g. Synthwave Mix">
+        </div>
+        <div class="modal-field">
+          <label for="modal-playlist-url">YOUTUBE PLAYLIST URL OR ID</label>
+          <input type="text" id="modal-playlist-url" placeholder="Paste full link (e.g. https://www.youtube.com/playlist?list=PLLCg...)">
+        </div>
+        <div class="modal-actions">
+          <button id="pl-modal-save-btn" class="hud-btn hud-btn-accent">LOCK FREQUENCY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
