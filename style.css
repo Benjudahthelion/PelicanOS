@@ -504,6 +504,153 @@ body {
   opacity: 0.4;
 }
 
+/* --- REBALANCED SIDE-BY-SIDE AUDIO DECK --- */
+.audio-deck-layout {
+  display: flex;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .audio-deck-layout {
+    flex-direction: column;
+  }
+}
+
+.audio-square-mount {
+  width: 320px;
+  min-height: 220px;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  background: #000;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(0,0,0,0.8);
+}
+
+.playlist-iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  border: none;
+}
+
+.audio-manager-station {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.now-playing-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--panel-border);
+  padding: 0.5rem 0.75rem;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.now-playing-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.track-title {
+  font-size: 0.82rem;
+  color: var(--primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 6px var(--primary-glow);
+}
+
+.frequencies-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.playlist-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.5rem;
+  max-height: 150px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.frequency-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(4, 18, 30, 0.6);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  padding: 0.5rem 0.65rem;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.frequency-card:hover {
+  border-color: var(--primary);
+  background: rgba(0, 240, 255, 0.08);
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.frequency-card.active-freq {
+  border-color: var(--accent);
+  background: rgba(255, 0, 85, 0.12);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.frequency-card.active-freq::before {
+  content: "TUNED";
+  position: absolute;
+  top: -6px;
+  right: 8px;
+  font-size: 0.55rem;
+  background: var(--accent);
+  color: #fff;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.frequency-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.frequency-name {
+  font-size: 0.75rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.frequency-id {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.frequency-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
 /* --- BUTTONS & INPUTS --- */
 button, select, input {
   font-family: var(--font-mono);
