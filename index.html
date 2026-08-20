@@ -169,31 +169,30 @@
         </ul>
       </section>
 
-      <!-- 06 // Comms Audio Frequency Deck (Side-by-Side Square Embed & Manager) -->
+      <!-- 06 // Comms Audio Playlist Deck (Side-by-Side Square Embed & Playlist Station) -->
       <section class="hud-panel audio-panel">
         <div class="panel-header">
-          <h2>06 // COMMS AUDIO FREQUENCY DECK</h2>
+          <h2>06 // COMMS AUDIO PLAYLIST DECK</h2>
           <div class="header-inline-controls">
-            <button id="open-playlist-modal-btn" class="hud-btn-sm hud-btn-accent">+ ADD FREQUENCY</button>
+            <button id="open-playlist-modal-btn" class="hud-btn-sm hud-btn-accent">+ ADD PLAYLIST</button>
             <span id="audio-status" class="hud-badge">STANDBY</span>
           </div>
         </div>
         <div class="audio-deck-layout">
           <!-- Left Square Embed -->
           <div class="audio-square-mount">
-            <iframe id="playlist-iframe" class="playlist-iframe" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+            <iframe id="playlist-iframe" class="playlist-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
           </div>
 
-          <!-- Right Frequency Station -->
+          <!-- Right Playlist Manager -->
           <div class="audio-manager-station">
             <div class="now-playing-box">
-              <span class="now-playing-label">ACTIVE TRANSMISSION FREQUENCY:</span>
-              <span id="track-title" class="track-title">NO FREQUENCY TUNED</span>
+              <span class="now-playing-label">ACTIVE TRANSMISSION PLAYLIST:</span>
+              <span id="track-title" class="track-title">NO PLAYLIST LOADED</span>
             </div>
             
-            <div class="frequencies-label">SAVED AUDIO FREQUENCIES:</div>
             <div id="playlist-cards-grid" class="playlist-cards-grid">
-              <!-- Rendered Frequency Cards -->
+              <!-- Rendered Playlist Cards -->
             </div>
           </div>
         </div>
@@ -229,21 +228,21 @@
   <div id="playlist-modal" class="hud-modal-overlay">
     <div class="hud-panel hud-modal">
       <div class="panel-header">
-        <h2 id="pl-modal-title">FREQUENCY CONFIGURATION</h2>
+        <h2 id="pl-modal-title">PLAYLIST CONFIGURATION</h2>
         <button id="pl-modal-close-btn" class="hud-btn-sm">X</button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="modal-playlist-index" value="-1">
         <div class="modal-field">
-          <label for="modal-playlist-label">FREQUENCY LABEL</label>
+          <label for="modal-playlist-label">PLAYLIST NAME</label>
           <input type="text" id="modal-playlist-label" placeholder="e.g. Cristiana // Study Mix">
         </div>
         <div class="modal-field">
           <label for="modal-playlist-url">YOUTUBE PLAYLIST URL OR ID</label>
-          <input type="text" id="modal-playlist-url" placeholder="Paste full link or ID...">
+          <input type="text" id="modal-playlist-url" placeholder="Paste full link or ID (e.g. PLLCgG2oCv5X...)">
         </div>
         <div class="modal-actions">
-          <button id="pl-modal-save-btn" class="hud-btn hud-btn-accent">LOCK FREQUENCY</button>
+          <button id="pl-modal-save-btn" class="hud-btn hud-btn-accent">LOCK PLAYLIST</button>
         </div>
       </div>
     </div>
