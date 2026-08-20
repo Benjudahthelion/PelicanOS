@@ -504,7 +504,7 @@ body {
   opacity: 0.4;
 }
 
-/* --- REBALANCED SIDE-BY-SIDE AUDIO DECK --- */
+/* --- SIDE-BY-SIDE AUDIO PLAYLIST DECK --- */
 .audio-deck-layout {
   display: flex;
   gap: 1.25rem;
@@ -518,7 +518,7 @@ body {
 }
 
 .audio-square-mount {
-  width: 320px;
+  width: 380px;
   min-height: 220px;
   border: 1px solid var(--panel-border);
   border-radius: 4px;
@@ -539,14 +539,14 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.75rem;
   min-width: 0;
 }
 
 .now-playing-box {
   background: rgba(0, 0, 0, 0.4);
   border: 1px dashed var(--panel-border);
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.75rem;
   border-radius: 3px;
   display: flex;
   flex-direction: column;
@@ -568,22 +568,16 @@ body {
   text-shadow: 0 0 6px var(--primary-glow);
 }
 
-.frequencies-label {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  letter-spacing: 1px;
-}
-
 .playlist-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 0.5rem;
-  max-height: 150px;
+  max-height: 160px;
   overflow-y: auto;
   flex: 1;
 }
 
-.frequency-card {
+.playlist-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -595,20 +589,20 @@ body {
   position: relative;
 }
 
-.frequency-card:hover {
+.playlist-card:hover {
   border-color: var(--primary);
   background: rgba(0, 240, 255, 0.08);
   box-shadow: 0 0 8px var(--primary-glow);
 }
 
-.frequency-card.active-freq {
+.playlist-card.active-pl {
   border-color: var(--accent);
   background: rgba(255, 0, 85, 0.12);
   box-shadow: 0 0 10px var(--accent-glow);
 }
 
-.frequency-card.active-freq::before {
-  content: "TUNED";
+.playlist-card.active-pl::before {
+  content: "LOADED";
   position: absolute;
   top: -6px;
   right: 8px;
@@ -620,7 +614,7 @@ body {
   font-weight: 700;
 }
 
-.frequency-info {
+.playlist-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -628,7 +622,7 @@ body {
   flex: 1;
 }
 
-.frequency-name {
+.playlist-name {
   font-size: 0.75rem;
   color: var(--text);
   white-space: nowrap;
@@ -637,7 +631,7 @@ body {
   font-weight: 600;
 }
 
-.frequency-id {
+.playlist-id-text {
   font-size: 0.6rem;
   color: var(--text-muted);
   white-space: nowrap;
@@ -645,7 +639,7 @@ body {
   text-overflow: ellipsis;
 }
 
-.frequency-actions {
+.playlist-actions {
   display: flex;
   gap: 0.25rem;
   flex-shrink: 0;
