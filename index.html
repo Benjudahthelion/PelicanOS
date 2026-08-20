@@ -68,7 +68,7 @@
         </div>
         <div class="ai-body">
           <div id="cmd-hints-drawer" class="cmd-hints-drawer">
-            <span><strong>SHIP ORDERS:</strong> "status", "start timer", "reset timer", "set timer 45 mins", "log hour", "reset week", "play music", "stop music", "add task [name]", "search [query]", or any CS theory question.</span>
+            <span><strong>SHIP ORDERS:</strong> "status", "start timer", "reset timer", "set timer 45 mins", "log hour", "reset week", "add task [name]", "search [query]", or ask any CS question.</span>
           </div>
 
           <div class="ai-visualizer" id="visualizer">
@@ -169,42 +169,23 @@
         </ul>
       </section>
 
-      <!-- 06 // Comms Audio Frequency Deck (Official Pure Embed) -->
+      <!-- 06 // Comms Audio Frequency Deck (Pure Native YouTube Embed) -->
       <section class="hud-panel audio-panel">
         <div class="panel-header">
           <h2>06 // COMMS AUDIO FREQUENCY DECK</h2>
-          <div class="header-inline-controls">
-            <button id="open-playlist-modal-btn" class="hud-btn-sm hud-btn-accent">+ ADD FREQUENCY</button>
-            <span id="audio-status" class="hud-badge">STANDBY</span>
-          </div>
+          <span class="hud-badge">NATIVE DECK</span>
         </div>
-        <div class="audio-body">
-          <div class="audio-main-layout">
-            <!-- Native Official YouTube Embed Container -->
-            <div class="audio-visual-mount">
-              <iframe id="playlist-iframe" class="playlist-iframe" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-            </div>
-
-            <div class="audio-control-cluster">
-              <div class="audio-track-info">
-                <div class="now-playing-label">ACTIVE TRANSMISSION FREQUENCY:</div>
-                <div id="track-title" class="track-title">NO FREQUENCY TUNED</div>
-              </div>
-
-              <div class="audio-controls-row">
-                <button id="reload-stream-btn" class="hud-btn hud-btn-accent">&#8635; RELOAD STREAM</button>
-                <button id="mute-stream-btn" class="hud-btn-sm">&#128266; MUTE / CLEAR</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Stored Frequency Cards Matrix -->
-          <div class="frequencies-container">
-            <div class="frequencies-label">SAVED AUDIO FREQUENCIES:</div>
-            <div id="playlist-cards-grid" class="playlist-cards-grid">
-              <!-- Rendered Frequency Cards -->
-            </div>
-          </div>
+        <div class="audio-body" style="display: flex; justify-content: center; width: 100%;">
+          <iframe 
+            width="100%" 
+            height="380" 
+            src="https://www.youtube.com/embed/videoseries?list=PLLCgG2oCv5XOp_71K6Ur3yhVFJJ4F6tbD" 
+            title="YouTube Playlist Audio Deck" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            allowfullscreen 
+            style="border-radius: 4px; border: 1px solid var(--panel-border);">
+          </iframe>
         </div>
       </section>
     </div>
@@ -229,30 +210,6 @@
         </div>
         <div class="modal-actions">
           <button id="modal-save-btn" class="hud-btn hud-btn-accent">TRANSMIT / SAVE</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Playlist Configuration Modal -->
-  <div id="playlist-modal" class="hud-modal-overlay">
-    <div class="hud-panel hud-modal">
-      <div class="panel-header">
-        <h2 id="pl-modal-title">FREQUENCY CONFIGURATION</h2>
-        <button id="pl-modal-close-btn" class="hud-btn-sm">X</button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="modal-playlist-index" value="-1">
-        <div class="modal-field">
-          <label for="modal-playlist-label">FREQUENCY LABEL</label>
-          <input type="text" id="modal-playlist-label" placeholder="e.g. Cristiana // Study Mix">
-        </div>
-        <div class="modal-field">
-          <label for="modal-playlist-url">YOUTUBE PLAYLIST URL OR ID</label>
-          <input type="text" id="modal-playlist-url" placeholder="Paste full link (e.g. https://www.youtube.com/playlist?list=PLLCg...)">
-        </div>
-        <div class="modal-actions">
-          <button id="pl-modal-save-btn" class="hud-btn hud-btn-accent">LOCK FREQUENCY</button>
         </div>
       </div>
     </div>
@@ -296,7 +253,7 @@
     </div>
   </div>
 
-  <!-- Generic Confirmation Modal -->
+  <!-- Confirmation Modal -->
   <div id="confirm-modal" class="hud-modal-overlay">
     <div class="hud-panel hud-modal">
       <div class="panel-header">
