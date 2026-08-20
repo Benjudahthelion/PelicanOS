@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v12.0
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v13.0 (CLEAN)
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -10,8 +10,6 @@ const STORAGE_KEYS = {
   STUDY_HOURS: "pelican_study_hours",
   STUDY_TARGET: "pelican_study_target",
   DAILY_VERSE: "pelican_daily_verse",
-  STORED_PLAYLISTS: "pelican_custom_playlists",
-  CURRENT_PLAYLIST_ID: "pelican_curr_active_playlist",
   FOCUS_DEFAULT_MINS: "pelican_focus_default_mins",
   SELECTED_VOICE: "pelican_selected_voice"
 };
@@ -31,7 +29,7 @@ const fallbackVerses = [
   { text: "Commit thy works unto the LORD, and thy thoughts shall be established.", ref: "Proverbs 16:3" }
 ];
 
-/* --- GENERIC STYLED MODAL CONTROLLER (REPLACES ALL PROMPT/ALERT/CONFIRM) --- */
+/* --- MODAL CONTROLLER --- */
 let confirmCallback = null;
 
 function showConfirmModal(title, text, onConfirm) {
@@ -474,161 +472,6 @@ function initTasks() {
   renderTasks();
 }
 
-/* --- BULLETPROOF OFFICIAL YOUTUBE EMBED PLAYER --- */
-let customPlaylists = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORED_PLAYLISTS) || "[]");
-
-function sanitizePlaylistId(input) {
-  let val = input.trim();
-  if (val.includes("list=")) {
-    try {
-      val = val.split("list=")[1].split("&")[0];
-    } catch (e) {}
-  }
-  return val;
-}
-
-function loadPlaylistIframe(playlistId) {
-  const iframe = document.getElementById("playlist-iframe");
-  const statusBadge = document.getElementById("audio-status");
-  if (!playlistId) return;
-
-  const cleanId = sanitizePlaylistId(playlistId);
-  iframe.src = `https://www.youtube.com/embed/videoseries?list=${cleanId}&autoplay=1`;
-  statusBadge.textContent = "BROADCASTING";
-}
-
-function initAudioDeck() {
-  const openModalBtn = document.getElementById("open-playlist-modal-btn");
-  const reloadBtn = document.getElementById("reload-stream-btn");
-  const muteBtn = document.getElementById("mute-stream-btn");
-  const trackTitle = document.getElementById("track-title");
-  const cardsGrid = document.getElementById("playlist-cards-grid");
-
-  const modal = document.getElementById("playlist-modal");
-  const modalTitle = document.getElementById("pl-modal-title");
-  const modalCloseBtn = document.getElementById("pl-modal-close-btn");
-  const modalSaveBtn = document.getElementById("pl-modal-save-btn");
-  const labelInput = document.getElementById("modal-playlist-label");
-  const urlInput = document.getElementById("modal-playlist-url");
-  const idxInput = document.getElementById("modal-playlist-index");
-
-  function renderFrequencyCards() {
-    cardsGrid.innerHTML = "";
-    const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-
-    if (customPlaylists.length === 0) {
-      cardsGrid.innerHTML = `<div style="font-size: 0.75rem; color: var(--text-muted); padding: 0.5rem;">NO FREQUENCIES STORED. CLICK '+ ADD FREQUENCY' TO LOCK A PLAYLIST.</div>`;
-      return;
-    }
-
-    customPlaylists.forEach((item, idx) => {
-      const card = document.createElement("div");
-      card.className = `frequency-card ${item.id === activeId ? 'active-freq' : ''}`;
-
-      card.innerHTML = `
-        <div class="frequency-info">
-          <span class="frequency-name">${item.label}</span>
-          <span class="frequency-id">ID: ${item.id}</span>
-        </div>
-        <div class="frequency-actions">
-          <button class="hud-btn-sm" onclick="tuneAudioPlaylist('${item.id}', '${item.label}')">TUNE</button>
-          <button class="hud-btn-sm" onclick="openPlaylistEditModal(${idx})">EDIT</button>
-          <button class="hud-btn-sm hud-btn-accent" onclick="deleteFrequency(${idx})">X</button>
-        </div>
-      `;
-      cardsGrid.appendChild(card);
-    });
-
-    localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
-  }
-
-  window.tuneAudioPlaylist = (id, label) => {
-    const cleanId = sanitizePlaylistId(id);
-    localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID, cleanId);
-    loadPlaylistIframe(cleanId);
-    trackTitle.textContent = `TUNED TO: ${label.toUpperCase()}`;
-    renderFrequencyCards();
-  };
-
-  window.deleteFrequency = (idx) => {
-    showConfirmModal("REMOVE FREQUENCY", `Delete '${customPlaylists[idx].label}' from Comms Deck?`, () => {
-      const deletedId = customPlaylists[idx].id;
-      customPlaylists.splice(idx, 1);
-      if (localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID) === deletedId) {
-        localStorage.removeItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-        document.getElementById("playlist-iframe").src = "";
-        trackTitle.textContent = "NO FREQUENCY TUNED";
-        document.getElementById("audio-status").textContent = "STANDBY";
-      }
-      renderFrequencyCards();
-    });
-  };
-
-  function openPlModal(idx = -1) {
-    idxInput.value = idx;
-    if (idx >= 0) {
-      modalTitle.textContent = `CONFIG // ${customPlaylists[idx].label.toUpperCase()}`;
-      labelInput.value = customPlaylists[idx].label;
-      urlInput.value = customPlaylists[idx].id;
-    } else {
-      modalTitle.textContent = "REGISTER NEW FREQUENCY";
-      labelInput.value = "";
-      urlInput.value = "";
-    }
-    modal.classList.add("open");
-    labelInput.focus();
-  }
-
-  function closePlModal() {
-    modal.classList.remove("open");
-  }
-
-  window.openPlaylistEditModal = (idx) => openPlModal(idx);
-
-  openModalBtn.addEventListener("click", () => openPlModal(-1));
-  modalCloseBtn.addEventListener("click", closePlModal);
-  modal.addEventListener("click", (e) => { if (e.target === modal) closePlModal(); });
-
-  modalSaveBtn.addEventListener("click", () => {
-    const label = labelInput.value.trim();
-    const rawUrl = urlInput.value.trim();
-    const idx = parseInt(idxInput.value, 10);
-
-    if (!label || !rawUrl) return;
-
-    const cleanId = sanitizePlaylistId(rawUrl);
-
-    if (idx >= 0) {
-      customPlaylists[idx] = { label, id: cleanId };
-    } else {
-      customPlaylists.push({ label, id: cleanId });
-    }
-
-    localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
-    tuneAudioPlaylist(cleanId, label);
-    closePlModal();
-  });
-
-  reloadBtn.addEventListener("click", () => {
-    const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-    if (activeId) loadPlaylistIframe(activeId);
-  });
-
-  muteBtn.addEventListener("click", () => {
-    document.getElementById("playlist-iframe").src = "";
-    document.getElementById("audio-status").textContent = "MUTED";
-    trackTitle.textContent = "STREAM HALTED";
-  });
-
-  renderFrequencyCards();
-
-  const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-  if (activeId) {
-    const match = customPlaylists.find(p => p.id === activeId);
-    tuneAudioPlaylist(activeId, match ? match.label : "ACTIVE FREQUENCY");
-  }
-}
-
 /* --- FULL SHIP VOICE COMMAND CONTROLLER --- */
 function initFlightComputer() {
   const voiceBtn = document.getElementById("voice-btn");
@@ -711,28 +554,7 @@ function initFlightComputer() {
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    // 2. Audio Deck Controls
-    if (q.includes("play") || q.includes("music") || q.includes("start music")) {
-      const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-      if (activeId) {
-        loadPlaylistIframe(activeId);
-        const msg = "Audio transmission engaged.";
-        responseEl.textContent = msg; speak(msg);
-      } else {
-        const msg = "No playlist tuned.";
-        responseEl.textContent = msg; speak(msg);
-      }
-      return;
-    }
-
-    if (q.includes("stop") || q.includes("pause") || q.includes("mute")) {
-      document.getElementById("playlist-iframe").src = "";
-      document.getElementById("audio-status").textContent = "MUTED";
-      const msg = "Audio playback halted.";
-      responseEl.textContent = msg; speak(msg); return;
-    }
-
-    // 3. Core Reactor (Timer Controls)
+    // 2. Core Reactor (Timer Controls)
     if (q.includes("start timer") || q.includes("engage focus") || q.includes("start focus")) {
       if (!isTimerRunning) toggleReactorTimer();
       const msg = "Focus reactor sprint engaged.";
@@ -759,7 +581,7 @@ function initFlightComputer() {
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    // 4. Study Odometer / Work Hours
+    // 3. Study Odometer / Work Hours
     if (q.includes("log hour") || q.includes("add hour")) {
       document.getElementById("log-hour-btn").click();
       const hours = localStorage.getItem(STORAGE_KEYS.STUDY_HOURS) || "0.0";
@@ -767,7 +589,12 @@ function initFlightComputer() {
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    // 5. Scripture
+    if (q.includes("reset week")) {
+      document.getElementById("reset-week-btn").click();
+      return;
+    }
+
+    // 4. Scripture
     if (q.includes("verse") || q.includes("scripture") || q.includes("bible")) {
       const vText = document.getElementById("kjv-text").textContent;
       const vRef = document.getElementById("kjv-ref").textContent;
@@ -775,7 +602,7 @@ function initFlightComputer() {
       speak(`${vText} ${vRef}`); return;
     }
 
-    // 6. Mission Tasks
+    // 5. Mission Tasks
     if (q.startsWith("add task ") || q.startsWith("new task ")) {
       const taskText = q.replace(/^(add task|new task)\s+/, "");
       logNewTask(taskText, "NORMAL");
@@ -783,7 +610,7 @@ function initFlightComputer() {
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    // 7. Search / Lookup (Zero API cost)
+    // 6. Search / Lookup (Zero API cost)
     if (q.startsWith("search for ") || q.startsWith("google ") || q.startsWith("look up ")) {
       const term = q.replace(/^(search for|google|look up)\s+/, "");
       window.open(`https://www.google.com/search?q=${encodeURIComponent(term)}`, "_blank");
@@ -791,7 +618,7 @@ function initFlightComputer() {
       responseEl.textContent = msg; speak(msg); return;
     }
 
-    // 8. Fallback to Gemini AI for complex CS reasoning
+    // 7. Fallback to Gemini AI for complex CS reasoning
     queryGeminiAI(query);
   }
 
@@ -933,7 +760,7 @@ function initTerminal() {
       const [cmd, ...args] = val.split(" ");
       switch(cmd.toLowerCase()) {
         case "help":
-          log("PELICAN Commands: status, clear, play, stop, mins [N], search [query], theme [cyber|matrix|lcars|deepspace]");
+          log("PELICAN Commands: status, clear, mins [N], search [query], theme [cyber|matrix|lcars|deepspace]");
           break;
         case "status":
           log("PELICAN-01 Status: Systems nominal. Central Time synced. Reactor online.");
@@ -943,13 +770,6 @@ function initTerminal() {
             setReactorDuration(parseInt(args[0], 10));
             log(`Sprint duration calibrated to ${args[0]} minutes.`);
           }
-          break;
-        case "play":
-          const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
-          if (activeId) loadPlaylistIframe(activeId);
-          break;
-        case "stop":
-          document.getElementById("playlist-iframe").src = "";
           break;
         case "search":
           if (args.length > 0) {
@@ -995,7 +815,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initReactor();
   initLinks();
   initTasks();
-  initAudioDeck();
   initFlightComputer();
   initTerminal();
 });
