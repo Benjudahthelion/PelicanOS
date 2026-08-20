@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v10.0
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v11.0 (FINAL)
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -418,7 +418,7 @@ function initTasks() {
   renderTasks();
 }
 
-/* --- BULLETPROOF NATIVE YOUTUBE EMBED PLAYER --- */
+/* --- BULLETPROOF OFFICIAL YOUTUBE EMBED PLAYER --- */
 let customPlaylists = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORED_PLAYLISTS) || "[]");
 
 function sanitizePlaylistId(input) {
@@ -437,7 +437,7 @@ function loadPlaylistIframe(playlistId) {
   if (!playlistId) return;
 
   const cleanId = sanitizePlaylistId(playlistId);
-  iframe.src = `https://www.youtube-nocookie.com/embed/videoseries?list=${cleanId}&autoplay=1&enablejsapi=1`;
+  iframe.src = `https://www.youtube-nocookie.com/embed?listType=playlist&list=${cleanId}&autoplay=1`;
   statusBadge.textContent = "BROADCASTING";
 }
 
@@ -569,17 +569,14 @@ function initAudioDeck() {
 
   renderFrequencyCards();
 
-  // Auto-tune active frequency on boot, or fallback to default user playlist
   const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
   if (activeId) {
     const match = customPlaylists.find(p => p.id === activeId);
     tuneAudioPlaylist(activeId, match ? match.label : "ACTIVE FREQUENCY");
-  } else if (customPlaylists.length > 0) {
-    tuneAudioPlaylist(customPlaylists[0].id, customPlaylists[0].label);
   }
 }
 
-/* --- FULL SHIP VOICE COMMAND CONTROLLER (COMPLETE MODULE CONTROL) --- */
+/* --- FULL SHIP VOICE COMMAND CONTROLLER --- */
 function initFlightComputer() {
   const voiceBtn = document.getElementById("voice-btn");
   const briefingBtn = document.getElementById("briefing-btn");
@@ -651,7 +648,6 @@ function initFlightComputer() {
     window.speechSynthesis.speak(utterance);
   }
 
-  // Complete Ship Control Voice Engine
   function processFlightCommand(query) {
     const q = query.toLowerCase().trim();
     responseEl.textContent = `Commander: "${query}"`;
@@ -803,7 +799,6 @@ function initFlightComputer() {
     processFlightCommand("status briefing");
   });
 
-  // Speech Recognition with Strict Final Result Filter
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SpeechRec) {
     recInstance = new SpeechRec();
