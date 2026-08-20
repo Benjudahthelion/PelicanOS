@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v18.0
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v19.0
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -14,7 +14,10 @@ const STORAGE_KEYS = {
   CURRENT_PLAYLIST_ID: "pelican_curr_active_playlist",
   FOCUS_DEFAULT_MINS: "pelican_focus_default_mins",
   SELECTED_VOICE: "pelican_selected_voice",
-  STUDY_LOG: "pelican_study_log"
+  STUDY_LOG: "pelican_study_log",
+  CALLSIGN: "pelican_callsign",
+  CRT_ENABLED: "pelican_crt_enabled",
+  STARFIELD_ENABLED: "pelican_starfield_enabled"
 };
 
 // Keys included in BACKUP / RESTORE. Deliberately excludes GEMINI_KEY (a
@@ -30,7 +33,10 @@ const BACKUP_KEYS = [
   STORAGE_KEYS.CURRENT_PLAYLIST_ID,
   STORAGE_KEYS.FOCUS_DEFAULT_MINS,
   STORAGE_KEYS.SELECTED_VOICE,
-  STORAGE_KEYS.STUDY_LOG
+  STORAGE_KEYS.STUDY_LOG,
+  STORAGE_KEYS.CALLSIGN,
+  STORAGE_KEYS.CRT_ENABLED,
+  STORAGE_KEYS.STARFIELD_ENABLED
 ];
 
 // --- DEFAULT STATE ---
@@ -64,6 +70,18 @@ function getCentralDateStr(date = new Date()) {
 function formatDueLabel(dueStr) {
   const d = new Date(dueStr + "T00:00:00");
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
+}
+
+function getCallsign() {
+  return (localStorage.getItem(STORAGE_KEYS.CALLSIGN) || "COMMANDER").trim().toUpperCase() || "COMMANDER";
+}
+
+function applyCallsignToUI() {
+  const cs = getCallsign();
+  const tag = document.getElementById("hud-callsign-tag");
+  if (tag) tag.textContent = `CALLSIGN: ${cs} // LOUISIANA CS FLIGHT DECK`;
+  const titleEl = document.querySelector(".hud-title");
+  if (titleEl) titleEl.textContent = `PELICAN OS // ${cs}`;
 }
 
 /* --- MODAL CONTROLLER --- */
@@ -134,9 +152,40 @@ function initModalInfrastructure() {
     localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, keyVal);
     apiModal.classList.remove("open");
   });
+
+  // Pilot Config / Personalization Modal
+  const pilotModal = document.getElementById("pilot-modal");
+  const pilotCloseBtn = document.getElementById("pilot-modal-close-btn");
+  const pilotSaveBtn = document.getElementById("pilot-modal-save-btn");
+  const callsignInput = document.getElementById("pilot-callsign-input");
+  const crtToggle = document.getElementById("crt-toggle");
+  const starfieldToggle = document.getElementById("starfield-toggle");
+
+  document.getElementById("pilot-btn").addEventListener("click", () => {
+    callsignInput.value = localStorage.getItem(STORAGE_KEYS.CALLSIGN) || "COMMANDER";
+    crtToggle.checked = (localStorage.getItem(STORAGE_KEYS.CRT_ENABLED) ?? "true") === "true";
+    starfieldToggle.checked = (localStorage.getItem(STORAGE_KEYS.STARFIELD_ENABLED) ?? "true") === "true";
+    pilotModal.classList.add("open");
+    callsignInput.focus();
+  });
+
+  pilotCloseBtn.addEventListener("click", () => pilotModal.classList.remove("open"));
+  pilotSaveBtn.addEventListener("click", () => {
+    const cs = callsignInput.value.trim() || "COMMANDER";
+    localStorage.setItem(STORAGE_KEYS.CALLSIGN, cs);
+    localStorage.setItem(STORAGE_KEYS.CRT_ENABLED, crtToggle.checked ? "true" : "false");
+    localStorage.setItem(STORAGE_KEYS.STARFIELD_ENABLED, starfieldToggle.checked ? "true" : "false");
+    applyCallsignToUI();
+    applyVisualToggles();
+    pilotModal.classList.remove("open");
+  });
 }
 
 /* --- STARFIELD ANIMATION CANVAS --- */
+let starfieldRunning = true;
+let starfieldRaf = null;
+let starfieldStartLoop = null; // set by initStarfield so toggles can restart it
+
 function initStarfield() {
   const canvas = document.getElementById("starfield");
   const ctx = canvas.getContext("2d");
@@ -154,6 +203,10 @@ function initStarfield() {
   }
 
   function render() {
+    if (!starfieldRunning) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#ffffff";
     stars.forEach(s => {
@@ -161,12 +214,43 @@ function initStarfield() {
       s.y += s.speed;
       if (s.y > canvas.height) s.y = 0;
     });
-    requestAnimationFrame(render);
+    starfieldRaf = requestAnimationFrame(render);
   }
+
+  starfieldStartLoop = () => {
+    if (starfieldRaf) cancelAnimationFrame(starfieldRaf);
+    starfieldRunning = true;
+    canvas.style.display = "";
+    resize();
+    render();
+  };
 
   window.addEventListener("resize", resize);
   resize();
-  render();
+  const enabled = (localStorage.getItem(STORAGE_KEYS.STARFIELD_ENABLED) ?? "true") === "true";
+  starfieldRunning = enabled;
+  if (enabled) render();
+  else canvas.style.display = "none";
+}
+
+function applyVisualToggles() {
+  const crtOn = (localStorage.getItem(STORAGE_KEYS.CRT_ENABLED) ?? "true") === "true";
+  const starOn = (localStorage.getItem(STORAGE_KEYS.STARFIELD_ENABLED) ?? "true") === "true";
+  const overlay = document.querySelector(".crt-overlay");
+  if (overlay) overlay.style.display = crtOn ? "" : "none";
+
+  const canvas = document.getElementById("starfield");
+  if (!canvas) return;
+
+  if (starOn) {
+    if (typeof starfieldStartLoop === "function") starfieldStartLoop();
+  } else {
+    starfieldRunning = false;
+    if (starfieldRaf) cancelAnimationFrame(starfieldRaf);
+    canvas.style.display = "none";
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 }
 
 /* --- CLOCK & CALENDAR (12-HOUR CENTRAL TIME) --- */
@@ -733,12 +817,7 @@ function initAudioDeck() {
     closePlModal();
   });
 
-  // Default initial playlist if empty
-  if (customPlaylists.length === 0) {
-    customPlaylists.push({ label: "Cristiana // Study Mix", id: "PLLCgG2oCv5XOp_71K6Ur3yhVFJJ4F6tbD" });
-    localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
-  }
-
+  // Starts clean — no default playlist. Add your own via "+ ADD PLAYLIST".
   renderPlaylistCards();
 
   const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
@@ -895,7 +974,8 @@ function initFlightComputer() {
 
   function processFlightCommand(query) {
     const q = query.toLowerCase().trim();
-    responseEl.textContent = `Commander: "${query}"`;
+    const callsign = getCallsign();
+    responseEl.textContent = `${callsign}: "${query}"`;
 
     // 1. Status Briefing
     if (q.includes("status") || q.includes("briefing") || q.includes("report")) {
@@ -907,7 +987,7 @@ function initFlightComputer() {
       const todayStr = getCentralDateStr();
       const overdueCount = tasks.filter(t => t.due && t.due < todayStr).length;
 
-      const msg = `PELICAN nominal. Time is ${timeStr} Central. ${hours} of ${target} study hours logged. ${tasks.length} active objectives, ${overdueCount} overdue.`;
+      const msg = `PELICAN nominal. Time is ${timeStr} Central. ${hours} of ${target} study hours logged. ${tasks.length} active objectives, ${overdueCount} overdue. Ready when you are, ${callsign}.`;
       responseEl.textContent = msg; speak(msg); return;
     }
 
@@ -989,7 +1069,7 @@ function initFlightComputer() {
   async function queryGeminiAI(promptText) {
     const apiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY);
     if (!apiKey) {
-      const msg = `Order acknowledged. (Add API Key in top right for complex queries).`;
+      const msg = `Order acknowledged, ${getCallsign()}. (Add API Key in top right for complex queries).`;
       responseEl.textContent = msg; speak("Order acknowledged."); return;
     }
 
@@ -997,11 +1077,12 @@ function initFlightComputer() {
 
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const callsign = getCallsign();
       const payload = {
         contents: [{
           role: "user",
           parts: [{
-            text: `You are PELICAN-01, an onboard AI command computer for an online Computer Science student in Louisiana. Address the user directly as Commander. Give a sharp, witty, gritty, and direct response (1-2 sentences max) answering the student's exact query. Query: ${promptText}`
+            text: `You are PELICAN-01, an onboard AI command computer for an online Computer Science student in Louisiana. Address the user directly as ${callsign}. Give a sharp, witty, gritty, and direct response (1-2 sentences max) answering the student's exact query. Query: ${promptText}`
           }]
         }],
         generationConfig: { maxOutputTokens: 100, temperature: 0.5 }
@@ -1126,7 +1207,7 @@ function initTerminal() {
       const [cmd, ...args] = val.split(" ");
       switch(cmd.toLowerCase()) {
         case "help":
-          log("PELICAN Commands: status, clear, mins [N], search [query], theme [cyber|matrix|lcars|deepspace], backup, restore");
+          log("PELICAN Commands: status, clear, mins [N], search [query], theme [cyber|matrix|lcars|deepspace|synthwave|terminal|ember|arctic|bayou], backup, restore");
           break;
         case "status":
           log("PELICAN-01 Status: Systems nominal. Central Time synced. Reactor online.");
@@ -1169,7 +1250,8 @@ function initTerminal() {
 function setTheme(theme) {
   document.body.setAttribute("data-theme", theme);
   localStorage.setItem(STORAGE_KEYS.THEME, theme);
-  document.getElementById("theme-select").value = theme;
+  const picker = document.getElementById("theme-select");
+  if (picker) picker.value = theme;
 }
 
 function initTheming() {
@@ -1185,6 +1267,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initStarfield();
   initClock();
   initTheming();
+  applyCallsignToUI();
+  applyVisualToggles();
   initVerse();
   initReactor();
   initLinks();
