@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v16.0
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v17.0
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -301,7 +301,7 @@ function initReactor() {
   updateOdometer();
 }
 
-/* --- NAV COMPUTER (2-COLUMN COMPACT BENTO GRID) --- */
+/* --- NAV COMPUTER --- */
 function initLinks() {
   const container = document.getElementById("links-container");
   const addBtn = document.getElementById("add-link-btn");
@@ -474,7 +474,7 @@ function initTasks() {
   renderTasks();
 }
 
-/* --- PLAYLIST AUDIO DECK CONTROLLER --- */
+/* --- PLAYLIST DECK CONTROLLER --- */
 let customPlaylists = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORED_PLAYLISTS) || "[]");
 
 function sanitizePlaylistId(input) {
@@ -549,7 +549,7 @@ function initAudioDeck() {
   };
 
   window.deletePlaylist = (idx) => {
-    showConfirmModal("REMOVE PLAYLIST", `Delete '${customPlaylists[idx].label}' from Comms Deck?`, () => {
+    showConfirmModal("REMOVE PLAYLIST", `Delete '${customPlaylists[idx].label}' from Deck?`, () => {
       const deletedId = customPlaylists[idx].id;
       customPlaylists.splice(idx, 1);
       if (localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID) === deletedId) {
@@ -607,13 +607,21 @@ function initAudioDeck() {
     closePlModal();
   });
 
-  // Load default playlist card if empty
+  // Default initial playlist if empty
   if (customPlaylists.length === 0) {
     customPlaylists.push({ label: "Cristiana // Study Mix", id: "PLLCgG2oCv5XOp_71K6Ur3yhVFJJ4F6tbD" });
     localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
   }
 
   renderPlaylistCards();
+
+  const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
+  if (activeId) {
+    const match = customPlaylists.find(p => p.id === activeId);
+    tunePlaylist(activeId, match ? match.label : "ACTIVE PLAYLIST");
+  } else if (customPlaylists.length > 0) {
+    tunePlaylist(customPlaylists[0].id, customPlaylists[0].label);
+  }
 }
 
 /* --- FULL SHIP VOICE COMMAND CONTROLLER --- */
