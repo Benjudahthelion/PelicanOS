@@ -173,11 +173,20 @@ body {
   border-radius: 2px;
 }
 
+.hud-badge-alert {
+  background: rgba(255, 0, 85, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* --- HEADER --- */
 .header-panel {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+  position: relative;
 }
 
 .hud-tag {
@@ -210,8 +219,22 @@ body {
 
 .header-right {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.6rem;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.backup-status {
+  position: absolute;
+  bottom: -1.1rem;
+  right: 0;
+  font-size: 0.62rem;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+}
+
+.backup-status-error {
+  color: var(--accent);
 }
 
 /* --- BENTO GRID LAYOUT --- */
@@ -397,6 +420,65 @@ body {
   justify-content: space-between;
 }
 
+/* --- 7-DAY TREND CHART --- */
+.trend-section {
+  border-top: 1px dashed var(--panel-border);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.trend-chart-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.trend-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 0.3rem;
+}
+
+.trend-bar-track {
+  width: 100%;
+  max-width: 20px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.trend-bar-fill {
+  width: 100%;
+  height: 0%;
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary-glow);
+  transition: height 0.3s ease;
+}
+
+.trend-day-label {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.trend-col.trend-today .trend-bar-fill {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.trend-col.trend-today .trend-day-label {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* --- NAV COMPUTER --- */
 .links-matrix-grid {
   display: grid;
@@ -472,13 +554,36 @@ body {
 /* --- MISSION LOG (TASKS) --- */
 .log-input-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
   margin-bottom: 0.75rem;
 }
 
+#task-input {
+  flex: 2 1 130px;
+}
+
+.task-course-input {
+  flex: 1 1 90px;
+  min-width: 80px;
+}
+
+.task-due-input {
+  flex: 1 1 130px;
+  color-scheme: dark;
+}
+
+#task-priority {
+  flex: 1 1 110px;
+}
+
+#add-task-btn {
+  flex: 0 0 auto;
+}
+
 .task-items {
   list-style: none;
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -489,6 +594,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 0.4rem 0.6rem;
@@ -499,9 +605,68 @@ body {
 .task-item.EXAM { border-left: 3px solid #f59e0b; }
 .task-item.NORMAL { border-left: 3px solid var(--primary); }
 
+.task-item.overdue {
+  box-shadow: inset 0 0 10px rgba(255, 0, 85, 0.15);
+}
+
 .task-item.done span {
   text-decoration: line-through;
   opacity: 0.4;
+}
+
+.task-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.task-text {
+  overflow-wrap: break-word;
+}
+
+.task-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.task-course-tag {
+  font-size: 0.6rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+.task-due-tag {
+  font-size: 0.6rem;
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+.task-due-tag.overdue {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.task-due-tag.due-today {
+  border-color: #f59e0b;
+  background: #f59e0b;
+  color: #0d0700;
+  font-weight: 700;
+}
+
+.task-actions {
+  flex-shrink: 0;
 }
 
 /* --- CYBER FRAMED AUDIO DECK --- */
@@ -725,7 +890,7 @@ button, select, input {
   max-width: 180px;
 }
 
-input[type="text"], input[type="number"], select {
+input[type="text"], input[type="number"], input[type="date"], select {
   padding: 0.4rem;
   font-size: 0.75rem;
 }
