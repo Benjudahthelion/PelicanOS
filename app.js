@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v13.0 (CLEAN)
+   PELICAN-01 COMMAND DECK // CLIENT-SIDE MASTER CONTROLLER v14.0
    ========================================================================== */
 
 const STORAGE_KEYS = {
@@ -10,6 +10,8 @@ const STORAGE_KEYS = {
   STUDY_HOURS: "pelican_study_hours",
   STUDY_TARGET: "pelican_study_target",
   DAILY_VERSE: "pelican_daily_verse",
+  STORED_PLAYLISTS: "pelican_custom_playlists",
+  CURRENT_PLAYLIST_ID: "pelican_curr_active_playlist",
   FOCUS_DEFAULT_MINS: "pelican_focus_default_mins",
   SELECTED_VOICE: "pelican_selected_voice"
 };
@@ -472,6 +474,148 @@ function initTasks() {
   renderTasks();
 }
 
+/* --- SIDE-BY-SIDE AUDIO FREQUENCY CONTROLLER --- */
+let customPlaylists = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORED_PLAYLISTS) || "[]");
+
+function sanitizePlaylistId(input) {
+  let val = input.trim();
+  if (val.includes("list=")) {
+    try {
+      val = val.split("list=")[1].split("&")[0];
+    } catch (e) {}
+  }
+  return val;
+}
+
+function loadPlaylistIframe(playlistId) {
+  const iframe = document.getElementById("playlist-iframe");
+  const statusBadge = document.getElementById("audio-status");
+  if (!playlistId) return;
+
+  const cleanId = sanitizePlaylistId(playlistId);
+  iframe.src = `https://www.youtube.com/embed?listType=playlist&list=${cleanId}&autoplay=1`;
+  statusBadge.textContent = "BROADCASTING";
+}
+
+function initAudioDeck() {
+  const openModalBtn = document.getElementById("open-playlist-modal-btn");
+  const trackTitle = document.getElementById("track-title");
+  const cardsGrid = document.getElementById("playlist-cards-grid");
+
+  const modal = document.getElementById("playlist-modal");
+  const modalTitle = document.getElementById("pl-modal-title");
+  const modalCloseBtn = document.getElementById("pl-modal-close-btn");
+  const modalSaveBtn = document.getElementById("pl-modal-save-btn");
+  const labelInput = document.getElementById("modal-playlist-label");
+  const urlInput = document.getElementById("modal-playlist-url");
+  const idxInput = document.getElementById("modal-playlist-index");
+
+  function renderFrequencyCards() {
+    cardsGrid.innerHTML = "";
+    const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
+
+    if (customPlaylists.length === 0) {
+      cardsGrid.innerHTML = `<div style="font-size: 0.72rem; color: var(--text-muted); padding: 0.5rem;">NO FREQUENCIES STORED. CLICK '+ ADD FREQUENCY' TO LOCK A PLAYLIST.</div>`;
+      return;
+    }
+
+    customPlaylists.forEach((item, idx) => {
+      const card = document.createElement("div");
+      card.className = `frequency-card ${item.id === activeId ? 'active-freq' : ''}`;
+
+      card.innerHTML = `
+        <div class="frequency-info">
+          <span class="frequency-name">${item.label}</span>
+          <span class="frequency-id">ID: ${item.id}</span>
+        </div>
+        <div class="frequency-actions">
+          <button class="hud-btn-sm" onclick="tuneAudioPlaylist('${item.id}', '${item.label}')">TUNE</button>
+          <button class="hud-btn-sm" onclick="openPlaylistEditModal(${idx})">EDIT</button>
+          <button class="hud-btn-sm hud-btn-accent" onclick="deleteFrequency(${idx})">X</button>
+        </div>
+      `;
+      cardsGrid.appendChild(card);
+    });
+
+    localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
+  }
+
+  window.tuneAudioPlaylist = (id, label) => {
+    const cleanId = sanitizePlaylistId(id);
+    localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID, cleanId);
+    loadPlaylistIframe(cleanId);
+    trackTitle.textContent = `TUNED TO: ${label.toUpperCase()}`;
+    renderFrequencyCards();
+  };
+
+  window.deleteFrequency = (idx) => {
+    showConfirmModal("REMOVE FREQUENCY", `Delete '${customPlaylists[idx].label}' from Comms Deck?`, () => {
+      const deletedId = customPlaylists[idx].id;
+      customPlaylists.splice(idx, 1);
+      if (localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID) === deletedId) {
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
+        document.getElementById("playlist-iframe").src = "";
+        trackTitle.textContent = "NO FREQUENCY TUNED";
+        document.getElementById("audio-status").textContent = "STANDBY";
+      }
+      renderFrequencyCards();
+    });
+  };
+
+  function openPlModal(idx = -1) {
+    idxInput.value = idx;
+    if (idx >= 0) {
+      modalTitle.textContent = `CONFIG // ${customPlaylists[idx].label.toUpperCase()}`;
+      labelInput.value = customPlaylists[idx].label;
+      urlInput.value = customPlaylists[idx].id;
+    } else {
+      modalTitle.textContent = "REGISTER NEW FREQUENCY";
+      labelInput.value = "";
+      urlInput.value = "";
+    }
+    modal.classList.add("open");
+    labelInput.focus();
+  }
+
+  function closePlModal() {
+    modal.classList.remove("open");
+  }
+
+  window.openPlaylistEditModal = (idx) => openPlModal(idx);
+
+  openModalBtn.addEventListener("click", () => openPlModal(-1));
+  modalCloseBtn.addEventListener("click", closePlModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closePlModal(); });
+
+  modalSaveBtn.addEventListener("click", () => {
+    const label = labelInput.value.trim();
+    const rawUrl = urlInput.value.trim();
+    const idx = parseInt(idxInput.value, 10);
+
+    if (!label || !rawUrl) return;
+
+    const cleanId = sanitizePlaylistId(rawUrl);
+
+    if (idx >= 0) {
+      customPlaylists[idx] = { label, id: cleanId };
+    } else {
+      customPlaylists.push({ label, id: cleanId });
+    }
+
+    localStorage.setItem(STORAGE_KEYS.STORED_PLAYLISTS, JSON.stringify(customPlaylists));
+    tuneAudioPlaylist(cleanId, label);
+    closePlModal();
+  });
+
+  renderFrequencyCards();
+
+  const activeId = localStorage.getItem(STORAGE_KEYS.CURRENT_PLAYLIST_ID);
+  if (activeId) {
+    const match = customPlaylists.find(p => p.id === activeId);
+    tuneAudioPlaylist(activeId, match ? match.label : "ACTIVE FREQUENCY");
+  }
+}
+
 /* --- FULL SHIP VOICE COMMAND CONTROLLER --- */
 function initFlightComputer() {
   const voiceBtn = document.getElementById("voice-btn");
@@ -815,6 +959,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initReactor();
   initLinks();
   initTasks();
+  initAudioDeck();
   initFlightComputer();
   initTerminal();
 });
