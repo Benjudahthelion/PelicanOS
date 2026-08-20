@@ -169,7 +169,7 @@
         </ul>
       </section>
 
-      <!-- 06 // Comms Audio Playlist Deck (Side-by-Side Square Embed & Playlist Station) -->
+      <!-- 06 // Comms Audio Playlist Deck (Side-by-Side Layout) -->
       <section class="hud-panel audio-panel">
         <div class="panel-header">
           <h2>06 // COMMS AUDIO PLAYLIST DECK</h2>
@@ -179,16 +179,23 @@
           </div>
         </div>
         <div class="audio-deck-layout">
-          <!-- Left Square Embed -->
+          <!-- Left Square Native Embed -->
           <div class="audio-square-mount">
-            <iframe id="playlist-iframe" class="playlist-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            <iframe 
+              id="playlist-iframe" 
+              class="playlist-iframe" 
+              src="https://www.youtube.com/embed/videoseries?list=PLLCgG2oCv5XOp_71K6Ur3yhVFJJ4F6tbD" 
+              referrerpolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              allowfullscreen>
+            </iframe>
           </div>
 
           <!-- Right Playlist Manager -->
           <div class="audio-manager-station">
             <div class="now-playing-box">
               <span class="now-playing-label">ACTIVE TRANSMISSION PLAYLIST:</span>
-              <span id="track-title" class="track-title">NO PLAYLIST LOADED</span>
+              <span id="track-title" class="track-title">CRISTIANA // STUDY MIX</span>
             </div>
             
             <div id="playlist-cards-grid" class="playlist-cards-grid">
